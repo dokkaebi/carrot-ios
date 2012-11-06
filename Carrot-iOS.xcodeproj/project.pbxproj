@@ -1,0 +1,433 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		4375BD0115F5628C000EDA42 /* Framework */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 4375BD0215F5628C000EDA42 /* Build configuration list for PBXAggregateTarget "Framework" */;
+			buildPhases = (
+				4375BD0715F562AB000EDA42 /* Build Framework */,
+			);
+			dependencies = (
+				4375BD0615F56295000EDA42 /* PBXTargetDependency */,
+			);
+			name = Framework;
+			productName = Framework;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		431CFFA3162737C000D74667 /* Carrot+Internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 431CFFA11627374B00D74667 /* Carrot+Internal.h */; };
+		433F6C471605236700CA65A2 /* CarrotFacebook.m in Sources */ = {isa = PBXBuildFile; fileRef = 433F6C461605236700CA65A2 /* CarrotFacebook.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		43679B2D1602A29D0042CC31 /* CarrotMainPageDoc.h in Headers */ = {isa = PBXBuildFile; fileRef = 43679B2C1602A29D0042CC31 /* CarrotMainPageDoc.h */; };
+		43679B2F1602A3840042CC31 /* CarrotHooks.m in Sources */ = {isa = PBXBuildFile; fileRef = 43679B2E1602A3840042CC31 /* CarrotHooks.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		4375BCF215F56148000EDA42 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4375BCF115F56148000EDA42 /* Foundation.framework */; };
+		437A1C1015FA66DD00971F2E /* Carrot-Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = 437A1C0F15FA66DD00971F2E /* Carrot-Prefix.pch */; };
+		437A1C1815FA66E900971F2E /* Carrot.h in Headers */ = {isa = PBXBuildFile; fileRef = 437A1C1115FA66E900971F2E /* Carrot.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		437A1C1915FA66E900971F2E /* Carrot.m in Sources */ = {isa = PBXBuildFile; fileRef = 437A1C1215FA66E900971F2E /* Carrot.m */; };
+		437A1C1A15FA66E900971F2E /* CarrotCachedRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 437A1C1315FA66E900971F2E /* CarrotCachedRequest.h */; };
+		437A1C1B15FA66E900971F2E /* CarrotCachedRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 437A1C1415FA66E900971F2E /* CarrotCachedRequest.m */; };
+		437A1C1C15FA66E900971F2E /* CarrotCAPI.m in Sources */ = {isa = PBXBuildFile; fileRef = 437A1C1515FA66E900971F2E /* CarrotCAPI.m */; };
+		437A1C1D15FA66E900971F2E /* CarrotRequestThread.h in Headers */ = {isa = PBXBuildFile; fileRef = 437A1C1615FA66E900971F2E /* CarrotRequestThread.h */; };
+		437A1C1E15FA66E900971F2E /* CarrotRequestThread.m in Sources */ = {isa = PBXBuildFile; fileRef = 437A1C1715FA66E900971F2E /* CarrotRequestThread.m */; };
+		437A1C2615FA66FA00971F2E /* AmazonSDKUtil.h in Headers */ = {isa = PBXBuildFile; fileRef = 437A1C2015FA66FA00971F2E /* AmazonSDKUtil.h */; };
+		437A1C2715FA66FA00971F2E /* AmazonSDKUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 437A1C2115FA66FA00971F2E /* AmazonSDKUtil.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		437A1C2815FA66FA00971F2E /* OpenUDID.h in Headers */ = {isa = PBXBuildFile; fileRef = 437A1C2215FA66FA00971F2E /* OpenUDID.h */; };
+		437A1C2915FA66FA00971F2E /* OpenUDID.m in Sources */ = {isa = PBXBuildFile; fileRef = 437A1C2315FA66FA00971F2E /* OpenUDID.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		437A1C2A15FA66FA00971F2E /* Reachability.h in Headers */ = {isa = PBXBuildFile; fileRef = 437A1C2415FA66FA00971F2E /* Reachability.h */; };
+		437A1C2B15FA66FA00971F2E /* Reachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 437A1C2515FA66FA00971F2E /* Reachability.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		4375BD0515F56295000EDA42 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4375BCE515F56148000EDA42 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4375BCED15F56148000EDA42;
+			remoteInfo = Carrot;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		431CFFA11627374B00D74667 /* Carrot+Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Carrot+Internal.h"; path = "Src/Carrot+Internal.h"; sourceTree = SOURCE_ROOT; };
+		433F6C461605236700CA65A2 /* CarrotFacebook.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CarrotFacebook.m; path = Src/CarrotFacebook.m; sourceTree = SOURCE_ROOT; };
+		43679B2C1602A29D0042CC31 /* CarrotMainPageDoc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CarrotMainPageDoc.h; path = Src/CarrotMainPageDoc.h; sourceTree = SOURCE_ROOT; };
+		43679B2E1602A3840042CC31 /* CarrotHooks.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CarrotHooks.m; path = Src/CarrotHooks.m; sourceTree = SOURCE_ROOT; };
+		4375BCEE15F56148000EDA42 /* libCarrot.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCarrot.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		4375BCF115F56148000EDA42 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		437A1C0F15FA66DD00971F2E /* Carrot-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "Carrot-Prefix.pch"; path = "Src/Carrot-Prefix.pch"; sourceTree = SOURCE_ROOT; };
+		437A1C1115FA66E900971F2E /* Carrot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Carrot.h; path = Src/Carrot.h; sourceTree = SOURCE_ROOT; };
+		437A1C1215FA66E900971F2E /* Carrot.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Carrot.m; path = Src/Carrot.m; sourceTree = SOURCE_ROOT; };
+		437A1C1315FA66E900971F2E /* CarrotCachedRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CarrotCachedRequest.h; path = Src/CarrotCachedRequest.h; sourceTree = SOURCE_ROOT; };
+		437A1C1415FA66E900971F2E /* CarrotCachedRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CarrotCachedRequest.m; path = Src/CarrotCachedRequest.m; sourceTree = SOURCE_ROOT; };
+		437A1C1515FA66E900971F2E /* CarrotCAPI.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CarrotCAPI.m; path = Src/CarrotCAPI.m; sourceTree = SOURCE_ROOT; };
+		437A1C1615FA66E900971F2E /* CarrotRequestThread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CarrotRequestThread.h; path = Src/CarrotRequestThread.h; sourceTree = SOURCE_ROOT; };
+		437A1C1715FA66E900971F2E /* CarrotRequestThread.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CarrotRequestThread.m; path = Src/CarrotRequestThread.m; sourceTree = SOURCE_ROOT; };
+		437A1C2015FA66FA00971F2E /* AmazonSDKUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AmazonSDKUtil.h; sourceTree = "<group>"; };
+		437A1C2115FA66FA00971F2E /* AmazonSDKUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AmazonSDKUtil.m; sourceTree = "<group>"; };
+		437A1C2215FA66FA00971F2E /* OpenUDID.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenUDID.h; sourceTree = "<group>"; };
+		437A1C2315FA66FA00971F2E /* OpenUDID.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenUDID.m; sourceTree = "<group>"; };
+		437A1C2415FA66FA00971F2E /* Reachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Reachability.h; sourceTree = "<group>"; };
+		437A1C2515FA66FA00971F2E /* Reachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Reachability.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4375BCEB15F56148000EDA42 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4375BCF215F56148000EDA42 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		43679B301602A3AC0042CC31 /* Doccumentation Source */ = {
+			isa = PBXGroup;
+			children = (
+				43679B2C1602A29D0042CC31 /* CarrotMainPageDoc.h */,
+			);
+			name = "Doccumentation Source";
+			sourceTree = "<group>";
+		};
+		4375BCE315F56148000EDA42 = {
+			isa = PBXGroup;
+			children = (
+				4375BCF315F56148000EDA42 /* Carrot */,
+				4375BCF015F56148000EDA42 /* Frameworks */,
+				4375BCEF15F56148000EDA42 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4375BCEF15F56148000EDA42 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4375BCEE15F56148000EDA42 /* libCarrot.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4375BCF015F56148000EDA42 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				4375BCF115F56148000EDA42 /* Foundation.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		4375BCF315F56148000EDA42 /* Carrot */ = {
+			isa = PBXGroup;
+			children = (
+				437A1C1115FA66E900971F2E /* Carrot.h */,
+				437A1C1215FA66E900971F2E /* Carrot.m */,
+				437A1C1315FA66E900971F2E /* CarrotCachedRequest.h */,
+				437A1C1415FA66E900971F2E /* CarrotCachedRequest.m */,
+				437A1C1515FA66E900971F2E /* CarrotCAPI.m */,
+				433F6C461605236700CA65A2 /* CarrotFacebook.m */,
+				43679B2E1602A3840042CC31 /* CarrotHooks.m */,
+				437A1C1615FA66E900971F2E /* CarrotRequestThread.h */,
+				437A1C1715FA66E900971F2E /* CarrotRequestThread.m */,
+				431CFFA11627374B00D74667 /* Carrot+Internal.h */,
+				437A1C1F15FA66FA00971F2E /* Thirdparty */,
+				4375BCF415F56148000EDA42 /* Supporting Files */,
+				43679B301602A3AC0042CC31 /* Doccumentation Source */,
+			);
+			path = Carrot;
+			sourceTree = "<group>";
+		};
+		4375BCF415F56148000EDA42 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				437A1C0F15FA66DD00971F2E /* Carrot-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		437A1C1F15FA66FA00971F2E /* Thirdparty */ = {
+			isa = PBXGroup;
+			children = (
+				437A1C2015FA66FA00971F2E /* AmazonSDKUtil.h */,
+				437A1C2115FA66FA00971F2E /* AmazonSDKUtil.m */,
+				437A1C2215FA66FA00971F2E /* OpenUDID.h */,
+				437A1C2315FA66FA00971F2E /* OpenUDID.m */,
+				437A1C2415FA66FA00971F2E /* Reachability.h */,
+				437A1C2515FA66FA00971F2E /* Reachability.m */,
+			);
+			name = Thirdparty;
+			path = Src/Thirdparty;
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		4375BD0B15F566B9000EDA42 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				437A1C1015FA66DD00971F2E /* Carrot-Prefix.pch in Headers */,
+				437A1C1815FA66E900971F2E /* Carrot.h in Headers */,
+				437A1C1A15FA66E900971F2E /* CarrotCachedRequest.h in Headers */,
+				437A1C1D15FA66E900971F2E /* CarrotRequestThread.h in Headers */,
+				437A1C2615FA66FA00971F2E /* AmazonSDKUtil.h in Headers */,
+				437A1C2815FA66FA00971F2E /* OpenUDID.h in Headers */,
+				437A1C2A15FA66FA00971F2E /* Reachability.h in Headers */,
+				43679B2D1602A29D0042CC31 /* CarrotMainPageDoc.h in Headers */,
+				431CFFA3162737C000D74667 /* Carrot+Internal.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		4375BCED15F56148000EDA42 /* Carrot */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4375BCFC15F56149000EDA42 /* Build configuration list for PBXNativeTarget "Carrot" */;
+			buildPhases = (
+				4375BCEA15F56148000EDA42 /* Sources */,
+				4375BCEB15F56148000EDA42 /* Frameworks */,
+				4375BD0B15F566B9000EDA42 /* Headers */,
+				4375BD0015F56251000EDA42 /* Prepare Framework */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Carrot;
+			productName = Carrot;
+			productReference = 4375BCEE15F56148000EDA42 /* libCarrot.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4375BCE515F56148000EDA42 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				CLASSPREFIX = Carrot;
+				LastUpgradeCheck = 0440;
+				ORGANIZATIONNAME = "Carrot Inc.";
+			};
+			buildConfigurationList = 4375BCE815F56148000EDA42 /* Build configuration list for PBXProject "Carrot-iOS" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 4375BCE315F56148000EDA42;
+			productRefGroup = 4375BCEF15F56148000EDA42 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4375BCED15F56148000EDA42 /* Carrot */,
+				4375BD0115F5628C000EDA42 /* Framework */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		4375BD0015F56251000EDA42 /* Prepare Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Prepare Framework";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n\nmkdir -p \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.framework/Versions/A/Headers\"\n\n# Link the \"Current\" version to \"A\"\n/bin/ln -sfh A \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.framework/Versions/Current\"\n/bin/ln -sfh Versions/Current/Headers \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.framework/Headers\"\n/bin/ln -sfh \"Versions/Current/${PRODUCT_NAME}\" \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.framework/${PRODUCT_NAME}\"\n\n# The -a ensures that the headers maintain the source modification date so that we don't constantly\n# cause propagating rebuilds of files that import these headers.\n/bin/cp -a \"${TARGET_BUILD_DIR}/${PUBLIC_HEADERS_FOLDER_PATH}/\" \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.framework/Versions/A/Headers\"";
+		};
+		4375BD0715F562AB000EDA42 /* Build Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Build Framework";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nset +u\n# Avoid recursively calling this script.\nif [[ $SF_MASTER_SCRIPT_RUNNING ]]\nthen\nexit 0\nfi\nset -u\nexport SF_MASTER_SCRIPT_RUNNING=1\n\nSF_TARGET_NAME=Carrot\nSF_EXECUTABLE_PATH=\"lib${SF_TARGET_NAME}.a\"\nSF_WRAPPER_NAME=\"${SF_TARGET_NAME}.framework\"\n\n# The following conditionals come from\n# https://github.com/kstenerud/iOS-Universal-Framework\n\nif [[ \"$SDK_NAME\" =~ ([A-Za-z]+) ]]\nthen\nSF_SDK_PLATFORM=${BASH_REMATCH[1]}\nelse\necho \"Could not find platform name from SDK_NAME: $SDK_NAME\"\nexit 1\nfi\n\nif [[ \"$SDK_NAME\" =~ ([0-9]+.*$) ]]\nthen\nSF_SDK_VERSION=${BASH_REMATCH[1]}\nelse\necho \"Could not find sdk version from SDK_NAME: $SDK_NAME\"\nexit 1\nfi\n\nif [[ \"$SF_SDK_PLATFORM\" = \"iphoneos\" ]]\nthen\nSF_OTHER_PLATFORM=iphonesimulator\nelse\nSF_OTHER_PLATFORM=iphoneos\nfi\n\nif [[ \"$BUILT_PRODUCTS_DIR\" =~ (.*)$SF_SDK_PLATFORM$ ]]\nthen\nSF_OTHER_BUILT_PRODUCTS_DIR=\"${BASH_REMATCH[1]}${SF_OTHER_PLATFORM}\"\nelse\necho \"Could not find platform name from build products directory: $BUILT_PRODUCTS_DIR\"\nexit 1\nfi\n\n# Build the other platform.\nxcodebuild -project \"${PROJECT_FILE_PATH}\" -target \"${TARGET_NAME}\" -configuration \"${CONFIGURATION}\" -sdk ${SF_OTHER_PLATFORM}${SF_SDK_VERSION} BUILD_DIR=\"${BUILD_DIR}\" OBJROOT=\"${OBJROOT}\" BUILD_ROOT=\"${BUILD_ROOT}\" SYMROOT=\"${SYMROOT}\" $ACTION\n\n# Smash the two static libraries into one fat binary and store it in the .framework\nlipo -create \"${BUILT_PRODUCTS_DIR}/${SF_EXECUTABLE_PATH}\" \"${SF_OTHER_BUILT_PRODUCTS_DIR}/${SF_EXECUTABLE_PATH}\" -output \"${BUILT_PRODUCTS_DIR}/${SF_WRAPPER_NAME}/Versions/A/${SF_TARGET_NAME}\"\n\n# Copy the binary to the other architecture folder to have a complete framework in both.\ncp -a \"${BUILT_PRODUCTS_DIR}/${SF_WRAPPER_NAME}/Versions/A/${SF_TARGET_NAME}\" \"${SF_OTHER_BUILT_PRODUCTS_DIR}/${SF_WRAPPER_NAME}/Versions/A/${SF_TARGET_NAME}\"";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4375BCEA15F56148000EDA42 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				437A1C1915FA66E900971F2E /* Carrot.m in Sources */,
+				437A1C1B15FA66E900971F2E /* CarrotCachedRequest.m in Sources */,
+				437A1C1C15FA66E900971F2E /* CarrotCAPI.m in Sources */,
+				437A1C1E15FA66E900971F2E /* CarrotRequestThread.m in Sources */,
+				437A1C2715FA66FA00971F2E /* AmazonSDKUtil.m in Sources */,
+				437A1C2915FA66FA00971F2E /* OpenUDID.m in Sources */,
+				437A1C2B15FA66FA00971F2E /* Reachability.m in Sources */,
+				43679B2F1602A3840042CC31 /* CarrotHooks.m in Sources */,
+				433F6C471605236700CA65A2 /* CarrotFacebook.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4375BD0615F56295000EDA42 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4375BCED15F56148000EDA42 /* Carrot */;
+			targetProxy = 4375BD0515F56295000EDA42 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		4375BCFA15F56149000EDA42 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_OBJCPP_ARC_ABI = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				PUBLIC_HEADERS_FOLDER_PATH = "$(PROJECT_NAME)Headers";
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		4375BCFB15F56149000EDA42 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_OBJCPP_ARC_ABI = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				PUBLIC_HEADERS_FOLDER_PATH = "$(PROJECT_NAME)Headers";
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		4375BCFD15F56149000EDA42 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_OBJCPP_ARC_ABI = YES;
+				DEAD_CODE_STRIPPING = NO;
+				DSTROOT = /tmp/Carrot.dst;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../iOS/Carrot Test App\"",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Src/Carrot-Prefix.pch";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PUBLIC_HEADERS_FOLDER_PATH = "$(PROJECT_NAME)Headers";
+				SKIP_INSTALL = YES;
+				STRIP_STYLE = "non-global";
+			};
+			name = Debug;
+		};
+		4375BCFE15F56149000EDA42 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_OBJCPP_ARC_ABI = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = NO;
+				DSTROOT = /tmp/Carrot.dst;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../iOS/Carrot Test App\"",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Src/Carrot-Prefix.pch";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PUBLIC_HEADERS_FOLDER_PATH = "$(PROJECT_NAME)Headers";
+				SKIP_INSTALL = YES;
+				STRIP_STYLE = "non-global";
+			};
+			name = Release;
+		};
+		4375BD0315F5628C000EDA42 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		4375BD0415F5628C000EDA42 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4375BCE815F56148000EDA42 /* Build configuration list for PBXProject "Carrot-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4375BCFA15F56149000EDA42 /* Debug */,
+				4375BCFB15F56149000EDA42 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4375BCFC15F56149000EDA42 /* Build configuration list for PBXNativeTarget "Carrot" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4375BCFD15F56149000EDA42 /* Debug */,
+				4375BCFE15F56149000EDA42 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4375BD0215F5628C000EDA42 /* Build configuration list for PBXAggregateTarget "Framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4375BD0315F5628C000EDA42 /* Debug */,
+				4375BD0415F5628C000EDA42 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 4375BCE515F56148000EDA42 /* Project object */;
+}
