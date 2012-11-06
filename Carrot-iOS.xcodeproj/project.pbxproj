@@ -24,6 +24,7 @@
 /* Begin PBXBuildFile section */
 		431CFFA3162737C000D74667 /* Carrot+Internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 431CFFA11627374B00D74667 /* Carrot+Internal.h */; };
 		433F6C471605236700CA65A2 /* CarrotFacebook.m in Sources */ = {isa = PBXBuildFile; fileRef = 433F6C461605236700CA65A2 /* CarrotFacebook.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		435926DD1649A3E30047C099 /* FacebookSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 435926DC1649A3E30047C099 /* FacebookSDK.framework */; };
 		43679B2D1602A29D0042CC31 /* CarrotMainPageDoc.h in Headers */ = {isa = PBXBuildFile; fileRef = 43679B2C1602A29D0042CC31 /* CarrotMainPageDoc.h */; };
 		43679B2F1602A3840042CC31 /* CarrotHooks.m in Sources */ = {isa = PBXBuildFile; fileRef = 43679B2E1602A3840042CC31 /* CarrotHooks.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		4375BCF215F56148000EDA42 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4375BCF115F56148000EDA42 /* Foundation.framework */; };
@@ -56,6 +57,7 @@
 /* Begin PBXFileReference section */
 		431CFFA11627374B00D74667 /* Carrot+Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Carrot+Internal.h"; path = "Src/Carrot+Internal.h"; sourceTree = SOURCE_ROOT; };
 		433F6C461605236700CA65A2 /* CarrotFacebook.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CarrotFacebook.m; path = Src/CarrotFacebook.m; sourceTree = SOURCE_ROOT; };
+		435926DC1649A3E30047C099 /* FacebookSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FacebookSDK.framework; sourceTree = "<group>"; };
 		43679B2C1602A29D0042CC31 /* CarrotMainPageDoc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CarrotMainPageDoc.h; path = Src/CarrotMainPageDoc.h; sourceTree = SOURCE_ROOT; };
 		43679B2E1602A3840042CC31 /* CarrotHooks.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CarrotHooks.m; path = Src/CarrotHooks.m; sourceTree = SOURCE_ROOT; };
 		4375BCEE15F56148000EDA42 /* libCarrot.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCarrot.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -82,6 +84,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4375BCF215F56148000EDA42 /* Foundation.framework in Frameworks */,
+				435926DD1649A3E30047C099 /* FacebookSDK.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -116,6 +119,7 @@
 		4375BCF015F56148000EDA42 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				435926DC1649A3E30047C099 /* FacebookSDK.framework */,
 				4375BCF115F56148000EDA42 /* Foundation.framework */,
 			);
 			name = Frameworks;
@@ -350,6 +354,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/../iOS/Carrot Test App\"",
+					"\"$(SRCROOT)\"",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Src/Carrot-Prefix.pch";
@@ -372,6 +377,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/../iOS/Carrot Test App\"",
+					"\"$(SRCROOT)\"",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Src/Carrot-Prefix.pch";
