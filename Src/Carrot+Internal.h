@@ -17,13 +17,13 @@
 
 @interface Carrot ()
 
-@property (strong, nonatomic, readwrite) NSString* appId;
+@property (strong, nonatomic) NSString* appId;
 @property (nonatomic, readwrite, setter=setAuthenticationStatus:) CarrotAuthenticationStatus authenticationStatus;
-@property (strong, nonatomic, readwrite) NSString* dataPath;
-@property (strong, nonatomic, readwrite) NSString* hostname;
-@property (strong, nonatomic, readwrite) NSString* udid;
-@property (strong, nonatomic, readwrite) NSString* appSecret;
-@property (strong, nonatomic, readwrite) NSString* urlSchemeSuffix;
+@property (strong, nonatomic) NSString* dataPath;
+@property (strong, nonatomic) NSString* hostname;
+@property (strong, nonatomic) NSString* udid;
+@property (strong, nonatomic) NSString* appSecret;
+@property (strong, nonatomic) NSString* urlSchemeSuffix;
 
 @property (strong, nonatomic) NSString* accessToken;
 
