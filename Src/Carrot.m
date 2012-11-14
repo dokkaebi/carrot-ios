@@ -350,7 +350,7 @@ static NSString* sCarrotDebugUDID = nil;
 
 - (void)checkUDID
 {
-   NSString* urlString = [NSString stringWithFormat:@"https://%@/games/%@/users/%@.json", self.hostname, self.appId, self.udid];
+   NSString* urlString = [NSString stringWithFormat:@"https://%@/games/%@/users.json?id=%@", self.hostname, self.appId, URLEscapedString(self.udid)];
    NSURLRequest* urlRequest = [NSURLRequest requestWithURL:[NSURL URLWithString:urlString]];
 
    [NSURLConnection sendAsynchronousRequest:urlRequest
