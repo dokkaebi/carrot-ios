@@ -94,11 +94,6 @@ int Carrot_DoFacebookAuth(int allowLoginUI, int permission)
       }
    }
 
-   if([FBSession defaultAppID] == nil)
-   {
-      [FBSession setDefaultAppID:[Carrot sharedAppID]];
-   }
-
    if(permission == CarrotFacebookPermissionRead &&
       [FBSession respondsToSelector:@selector(openActiveSessionWithReadPermissions:allowLoginUI:completionHandler:)])
    {
