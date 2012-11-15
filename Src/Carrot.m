@@ -495,10 +495,15 @@ static NSString* sCarrotDebugUDID = nil;
 
 - (BOOL)postAction:(NSString*)actionId creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties
 {
-   return [self postAction:actionId withProperties:nil creatingInstanceOf:objectTypeId withProperties:objectProperties];
+   return [self postAction:actionId withProperties:nil creatingInstanceOf:objectTypeId withProperties:objectProperties andInstanceId:nil];
 }
 
 - (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties
+{
+   return [self postAction:actionId withProperties:nil creatingInstanceOf:objectTypeId withProperties:objectProperties andInstanceId:nil];
+}
+
+- (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties andInstanceId:(NSString*)objectInstanceId
 {
    if(!objectProperties)
    {
@@ -525,6 +530,11 @@ static NSString* sCarrotDebugUDID = nil;
 
    NSMutableDictionary* payload = [NSMutableDictionary dictionaryWithDictionary:@{
                                    @"action_id" : actionId, @"object_properties" : fullObjectProperties}];
+
+   if(objectInstanceId != nil)
+   {
+      [payload setObject:objectInstanceId forKey:@"object_instance_id"];
+   }
 
    if(actionProperties != nil)
    {

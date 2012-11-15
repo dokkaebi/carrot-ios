@@ -108,11 +108,13 @@ int Carrot_PostInstanceAction(const char* actionId, const char* actionProperties
 }
 
 int Carrot_PostCreateAction(const char* actionId, const char* actionPropertiesJson,
-                            const char* objectId, const char* objectPropertiesJson)
+                            const char* objectId, const char* objectPropertiesJson,
+                            const char* objectInstanceId)
 {
    NSError* error = nil;
    NSDictionary* actionProperties = nil;
    NSDictionary* objectProperties = nil;
+   NSString* objectInstanceIdString = nil;
    if(actionPropertiesJson)
    {
       actionProperties = [NSJSONSerialization JSONObjectWithData:[[NSString stringWithUTF8String:actionPropertiesJson] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:&error];
@@ -131,10 +133,16 @@ int Carrot_PostCreateAction(const char* actionId, const char* actionPropertiesJs
       return 0;
    }
 
+   if(objectInstanceId)
+   {
+      objectInstanceIdString = [NSString stringWithUTF8String:objectInstanceId];
+   }
+
    return [[Carrot sharedInstance] postAction:[NSString stringWithUTF8String:actionId]
                                withProperties:actionProperties
                            creatingInstanceOf:[NSString stringWithUTF8String:objectId]
-                               withProperties:objectProperties];
+                               withProperties:objectProperties
+                                andInstanceId:objectInstanceIdString];
 }
 
 void Carrot_AssignFnPtrDelegate(const void* context, CarrotAuthStatusPtr authStatus,

@@ -337,6 +337,22 @@ typedef enum CarrotAuthenticationStatus {
  */
 - (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties;
 
+/**
+ * Post an Open Graph action to the Carrot service creating a new object that specifies an instance id.
+ *
+ * If the instance id specified already exists on the server, it will be re-used
+ * instead of creating a new instance.
+ *
+ * @param actionId         The Carrot action id.
+ * @param actionProperties The properties to send with the Carrot action.
+ * @param objectTypeId     The object id of the Carrot object type to create.
+ * @param objectProperties The properties for the new object.
+ * @param objectInstanceId The object instance id to create or re-use.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+- (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties andInstanceId:(NSString*)objectInstanceId;
+
 @end
 /**
  * Allows for notification of Carrot events of interest to your application.
@@ -436,11 +452,13 @@ extern int Carrot_PostInstanceAction(const char* actionId, const char* actionPro
  * @param actionPropertiesJson   The properties to send with the Carrot action encoded as a JSON object, or NULL.
  * @param objectTypeId           The object id of the Carrot object type to create.
  * @param objectPropertiesJson   The properties for the new object encoded as a JSON object.
+ * @param objectInstanceId       The object instance id for the newly created (or re-used object), or NULL.
  *
  * @returns 1 if the request was cached successfully, and will be sent when possible.
  */
 extern int Carrot_PostCreateAction(const char* actionId, const char* actionPropertiesJson,
-                                   const char* objectId, const char* objectPropertiesJson);
+                                   const char* objectId, const char* objectPropertiesJson,
+                                   const char* objectInstanceId);
 
 /**
  * Perform Facebook Authentication required for Carrot.
