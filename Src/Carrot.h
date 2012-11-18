@@ -42,8 +42,15 @@ typedef enum CarrotAuthenticationStatus {
  * Once a Carrot instance has been constructed, any calls to the following methods will
  * will be cached on the client and sent to the Carrot service once authentication has
  * occurred.
- * - The @link postAchievement: postAchievement: @endlink method.
- * - The @link postHighScore: postHighScore: @endlink method.
+ *
+ * - The postAchievement: method.
+ * - The postHighScore: method.
+ * - All variations of the postAction method
+ * 	* postAction:forObjectInstance:
+ * 	* postAction:withProperties:forObjectInstance:
+ * 	* postAction:creatingInstanceOf:withProperties:
+ * 	* postAction:withProperties:creatingInstanceOf:withProperties:
+ * 	* postAction:withProperties:creatingInstanceOf:withProperties:andInstanceId:
  *
  * This means that a user may authenticate with Facebook at a much later date
  * and calls made to Carrot will still be transmitted to the server. Each Carrot
@@ -59,22 +66,20 @@ typedef enum CarrotAuthenticationStatus {
  * getting the Facebook access token from the URL which is sent to your UIApplicationDelegate
  * when the -[application:openURL:sourceApplication:annotation:] message is recieved.
  *
- * If you use this function, you do not need to call handleOpenURL:, or setAppSecret:.
+ * If you use this function, you do not need to call handleOpenURL: or setAppSecret:.
  *
  * This function *must* be called from no other place than main() in your application's
  * 'main.m' or 'main.mm' file before UIApplicationMain() is called. Ex:
  *
- * @code
- * int main(int argc, char *argv[])
- * {
- *    @autoreleasepool {
- *       // Add this line here.
- *       [Carrot plantInApplication:[YourAppDelegate class] withSecret:@"your_app_secret"];
+ * 	int main(int argc, char *argv[])
+ * 	{
+ * 		@autoreleasepool {
+ * 			// Add this line here.
+ * 			[Carrot plantInApplication:[YourAppDelegate class] withSecret:@"your_app_secret"];
  *
- *       return UIApplicationMain(argc, argv, nil, NSStringFromClass([YourAppDelegate class]));
- *    }
- * }
- * @endcode
+ * 			return UIApplicationMain(argc, argv, nil, NSStringFromClass([YourAppDelegate class]));
+ * 		}
+ * 	}
  *
  * @param appDelegateClass Class of your application delegate, ex: [YourAppDelegate class].
  * @param appSecret        Your Carrot application secret.
@@ -88,22 +93,20 @@ typedef enum CarrotAuthenticationStatus {
  * getting the Facebook access token from the URL which is sent to your UIApplicationDelegate
  * when the -[application:openURL:sourceApplication:annotation:] message is recieved.
  *
- * If you use this function, you do not need to call handleOpenURL:, or setAppSecret:.
+ * If you use this function, you do not need to call handleOpenURL: or setAppSecret:.
  *
  * This function *must* be called from no other place than main() in your application's
  * 'main.m' or 'main.mm' file before UIApplicationMain() is called. Ex:
  *
- * @code
- * int main(int argc, char *argv[])
- * {
- *    @autoreleasepool {
- *       // Add this line here.
- *       [Carrot plantInApplication:[YourAppDelegate class] appID:@"your_fb_app_id" withSecret:@"your_app_secret"];
+ * 	int main(int argc, char *argv[])
+ * 	{
+ * 		@autoreleasepool {
+ * 			// Add this line here.
+ * 			[Carrot plantInApplication:[YourAppDelegate class] appID:@"your_fb_app_id" withSecret:@"your_app_secret"];
  *
- *       return UIApplicationMain(argc, argv, nil, NSStringFromClass([YourAppDelegate class]));
- *    }
- * }
- * @endcode
+ * 			UIApplicationMain(argc, argv, nil, NSStringFromClass([YourAppDelegate class]));
+ * 		}
+ * 	}
  *
  * @param appID            Your Facebook Application ID.
  * @param appDelegateClass Class of your application delegate, ex: [YourAppDelegate class].
@@ -118,22 +121,20 @@ typedef enum CarrotAuthenticationStatus {
  * getting the Facebook access token from the URL which is sent to your UIApplicationDelegate
  * when the -[application:openURL:sourceApplication:annotation:] message is recieved.
  *
- * If you use this function, you do not need to call handleOpenURL:, or setAppSecret:.
+ * If you use this function, you do not need to call handleOpenURL: or setAppSecret:.
  *
  * This function *must* be called from no other place than main() in your application's
  * 'main.m' or 'main.mm' file before UIApplicationMain() is called. Ex:
  *
- * @code
- * int main(int argc, char *argv[])
- * {
- *    @autoreleasepool {
- *       // Add this line here.
- *       [Carrot plantInApplication:[YourAppDelegate class] appID:@"your_fb_app_id" urlSchemeSuffix:@"your_scheme_suffix" withSecret:@"your_app_secret"];
+ * 	int main(int argc, char *argv[])
+ * 	{
+ * 		@autoreleasepool {
+ * 			// Add this line here.
+ * 			[Carrot plantInApplication:[YourAppDelegate class] appID:@"your_fb_app_id" urlSchemeSuffix:@"your_scheme_suffix" withSecret:@"your_app_secret"];
  *
- *       return UIApplicationMain(argc, argv, nil, NSStringFromClass([YourAppDelegate class]));
- *    }
- * }
- * @endcode
+ * 			return UIApplicationMain(argc, argv, nil, NSStringFromClass([YourAppDelegate class]));
+ * 		}
+ * 	}
  *
  * @param appID            Your Facebook Application ID.
  * @param appDelegateClass Class of your application delegate, ex: [YourAppDelegate class].
@@ -227,7 +228,7 @@ typedef enum CarrotAuthenticationStatus {
  * This method should be called during your UIApplicationDelegate's
  * -[application:openURL:sourceApplication:annotation:] implementation.
  *
- * @note You can allow Carrot to perform this for you by using @link plantInApplication:withSecret: plantInApplication:withSecret: @endlink.
+ * @note You can allow Carrot to perform this for you by using plantInApplication:withSecret:
  *
  * @param url           URL passed to the message.
  *
@@ -240,7 +241,7 @@ typedef enum CarrotAuthenticationStatus {
 /**
  * Assign a Facebook access token.
  *
- * @note You can allow Carrot to perform this for you by using @link plantInApplication:withSecret: plantInApplication:withSecret: @endlink.
+ * @note You can allow Carrot to perform this for you by using plantInApplication:withSecret:
  * @note You should call this method if you do not use the handleOpenURL: method.
  *
  * @param accessToken   Access token retrieved from Facebook.
@@ -250,7 +251,7 @@ typedef enum CarrotAuthenticationStatus {
 /**
  * Assign a Carrot application secret.
  *
- * @note You can allow Carrot to perform this for you by using @link plantInApplication:withSecret: plantInApplication:withSecret: @endlink.
+ * @note You can allow Carrot to perform this for you by using plantInApplication:withSecret:
  *
  * @param appSecret     Carrot application secret.
  */
@@ -259,7 +260,7 @@ typedef enum CarrotAuthenticationStatus {
 /**
  * Assign a push notification device token to the current Carrot user.
  *
- * @note You can allow Carrot to perform this for you by using @link plantInApplication:withSecret: plantInApplication:withSecret: @endlink.
+ * @note You can allow Carrot to perform this for you by using plantInApplication:withSecret:
  *
  * @param deviceToken   Push notification device token.
  */
