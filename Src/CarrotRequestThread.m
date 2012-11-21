@@ -284,7 +284,15 @@ NSString* URLEscapedString(NSString* inString)
                else
                {
                   NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-                  if([[Carrot sharedInstance] updateAuthenticationStatus:response.statusCode])
+                  if(response.statusCode == 404)
+                  {
+                     NSLog(@"Carrot resource not found, removing request from cache.");
+                     @synchronized(self.requestQueue)
+                     {
+                        [request removeFromCache:self.sqliteDb];
+                     }
+                  }
+                  else if([[Carrot sharedInstance] updateAuthenticationStatus:response.statusCode])
                   {
                      if(self.carrot.authenticationStatus == CarrotAuthenticationStatusReady)
                      {
