@@ -262,7 +262,7 @@ static NSString* sCarrotDebugUDID = nil;
          self.authenticationStatus = CarrotAuthenticationStatusReadOnly;
          break;
       }
-      case 404:
+      case 403:
       {
          // The user has not authorized the application, or deauthorized the application.
          self.authenticationStatus = CarrotAuthenticationStatusNotAuthorized;
