@@ -151,7 +151,7 @@ typedef enum CarrotAuthenticationStatus {
 /**
  * CarrotDelegate which recieves action notifications.
  */
-@property (weak, nonatomic) NSObject <CarrotDelegate>* delegate;
+@property (weak, nonatomic, setter=setDelegate:) NSObject <CarrotDelegate>* delegate;
 
 /**
  * Carrot singleton.

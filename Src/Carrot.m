@@ -212,6 +212,13 @@ static NSString* sCarrotDebugUDID = nil;
    }
 }
 
+- (void)setDelegate:(NSObject <CarrotDelegate>*)delegate
+{
+   _delegate = delegate;
+   self.lastAuthStatusReported = CarrotAuthenticationStatusUndetermined;
+   [self setAuthenticationStatus:_authenticationStatus];
+}
+
 - (void)setAppSecret:(NSString*)appSecret
 {
    _appSecret = appSecret;
