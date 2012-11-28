@@ -30,6 +30,7 @@ extern NSString* URLEscapedString(NSString* inString);
 
 @property (strong, nonatomic) CarrotRequestThread* requestThread;
 @property (strong, nonatomic) CarrotReachability* reachability;
+@property (nonatomic) CarrotAuthenticationStatus lastAuthStatusReported;
 
 @end
 
@@ -135,6 +136,7 @@ static NSString* sCarrotDebugUDID = nil;
    if(self)
    {
       _authenticationStatus = CarrotAuthenticationStatusUndetermined;
+      self.lastAuthStatusReported = _authenticationStatus;
       self.hostname = (hostnameOrNil ? hostnameOrNil : kCarrotDefaultHostname);
       self.appId = appId;
       self.appSecret = appSecret;
@@ -236,9 +238,10 @@ static NSString* sCarrotDebugUDID = nil;
       }
    }
 
-   if([[Carrot sharedInstance].delegate
-       respondsToSelector:@selector(authenticationStatusChanged:withError:)])
+   if(self.lastAuthStatusReported != _authenticationStatus &&
+      [[Carrot sharedInstance].delegate respondsToSelector:@selector(authenticationStatusChanged:withError:)])
    {
+      self.lastAuthStatusReported = _authenticationStatus;
       [[Carrot sharedInstance].delegate authenticationStatusChanged:_authenticationStatus
                                                           withError:error];
    }
