@@ -548,4 +548,30 @@ static NSString* sCarrotDebugUDID = nil;
                                         withPayload:payload];
 }
 
+-(BOOL)likeGame
+{
+   return [self.requestThread addRequestForEndpoint:@"/me/like.json"
+                                        withPayload:@{@"object" : @"game"}];
+}
+
+-(BOOL)likePublisher
+{
+   return [self.requestThread addRequestForEndpoint:@"/me/like.json"
+                                        withPayload:@{@"object" : @"publisher"}];
+}
+
+-(BOOL)likeAchievement:(NSString*)achievementId;
+{
+   NSString* likeObject = [NSString stringWithFormat:@"achievement:%@", achievementId];
+   return [self.requestThread addRequestForEndpoint:@"/me/like.json"
+                                        withPayload:@{@"object" : likeObject}];
+}
+
+-(BOOL)likeObject:(NSString*)objectInstanceId
+{
+   NSString* likeObject = [NSString stringWithFormat:@"object:%@", objectInstanceId];
+   return [self.requestThread addRequestForEndpoint:@"/me/like.json"
+                                        withPayload:@{@"object" : likeObject}];
+}
+
 @end

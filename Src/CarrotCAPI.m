@@ -153,3 +153,23 @@ void Carrot_AssignFnPtrDelegate(const void* context, CarrotAuthStatusPtr authSta
    [CarrotCAPIDelegate sharedInstance].appLink = appLink;
    [Carrot sharedInstance].delegate = [CarrotCAPIDelegate sharedInstance];
 }
+
+int Carrot_LikeGame()
+{
+   return [[Carrot sharedInstance] likeGame];
+}
+
+int Carrot_LikePublisher()
+{
+   return [[Carrot sharedInstance] likePublisher];
+}
+
+int Carrot_LikeAchievement(const char* achievementId)
+{
+   return [[Carrot sharedInstance] likeAchievement:[NSString stringWithUTF8String:achievementId]];
+}
+
+int Carrot_LikeObject(const char* objectInstanceId)
+{
+   return [[Carrot sharedInstance] likeObject:[NSString stringWithUTF8String:objectInstanceId]];
+}

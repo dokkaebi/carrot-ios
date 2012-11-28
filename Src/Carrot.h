@@ -354,6 +354,38 @@ typedef enum CarrotAuthenticationStatus {
  */
 - (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties andInstanceId:(NSString*)objectInstanceId;
 
+/**
+ * Post a 'Like' action that likes the Game's Facebook Page.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+-(BOOL)likeGame;
+
+/**
+ * Post a 'Like' action that likes the Publisher's Facebook Page.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+-(BOOL)likePublisher;
+
+/**
+ * Post a 'Like' action that likes an achievement.
+ *
+ * @param achievementId The achievement identifier.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+-(BOOL)likeAchievement:(NSString*)achievementId;
+
+/**
+ * Post a 'Like' action that likes an Open Graph object.
+ *
+ * @param objectInstanceId The instance id of the Carrot object.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+-(BOOL)likeObject:(NSString*)objectInstanceId;
+
 @end
 /**
  * Allows for notification of Carrot events of interest to your application.
@@ -490,6 +522,39 @@ extern int Carrot_DoFacebookAuth(int allowLoginUI, int permission);
 extern void Carrot_AssignFnPtrDelegate(const void* context,
                                        CarrotAuthStatusPtr authStatus,
                                        CarrotAppLinkPtr appLink);
+
+
+/**
+ * Post a 'Like' action that likes the Game's Facebook Page.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+extern int Carrot_LikeGame();
+
+/**
+ * Post a 'Like' action that likes the Publisher's Facebook Page.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+extern int Carrot_LikePublisher();
+
+/**
+ * Post a 'Like' action that likes an achievement.
+ *
+ * @param achievementId The achievement identifier.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+extern int Carrot_LikeAchievement(const char* achievementId);
+
+/**
+ * Post a 'Like' action that likes an Open Graph object.
+ *
+ * @param objectInstanceId The instance id of the Carrot object.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+extern int Carrot_LikeObject(const char* objectInstanceId);
 
 #ifdef __cplusplus
 } /* extern "C" */
