@@ -19,7 +19,7 @@
 #import "OpenUDID.h"
 #import "Reachability.h"
 
-#define kCarrotDefaultHostname @"gocarrot.herokuapp.com"
+#define kCarrotDefaultHostname @"gocarrot.com"
 
 extern void Carrot_Plant(Class appDelegateClass, NSString* appSecret);
 extern void Carrot_GetFBAppId(NSMutableString* outString);
