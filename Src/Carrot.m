@@ -169,8 +169,7 @@ static NSString* sCarrotDebugUDID = nil;
       self.reachability = [CarrotReachability reachabilityWithHostname:self.hostname];
       self.reachability.reachableBlock = ^(CarrotReachability* reach)
       {
-         // See if we've got a user for this UDID
-         [[Carrot sharedInstance] checkUDID];
+         [[Carrot sharedInstance] validateUser];
       };
       self.reachability.unreachableBlock = ^(CarrotReachability* reach)
       {
@@ -208,7 +207,7 @@ static NSString* sCarrotDebugUDID = nil;
 
    if(self.authenticationStatus != CarrotAuthenticationStatusReady)
    {
-      [self checkUDID];
+      [self validateUser];
    }
 }
 
@@ -358,57 +357,13 @@ static NSString* sCarrotDebugUDID = nil;
    return ret;
 }
 
-- (void)checkUDID
+- (void)validateUser
 {
-   NSString* urlString = [NSString stringWithFormat:@"https://%@/games/%@/users.json?id=%@", self.hostname, self.appId, URLEscapedString(self.udid)];
-   NSURLRequest* urlRequest = [NSURLRequest requestWithURL:[NSURL URLWithString:urlString]];
-
-   [NSURLConnection sendAsynchronousRequest:urlRequest
-                                      queue:[NSOperationQueue mainQueue]
-                          completionHandler:^(NSURLResponse* response, NSData* data, NSError* error)
-    {
-       if(error)
-       {
-          NSLog(@"Unknown error verifying Carrot user: %@", error);
-          [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
-       }
-       else
-       {
-          NSHTTPURLResponse* httpResponse = (NSHTTPURLResponse*)response;
-          NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-          if(error)
-          {
-             NSLog(@"Unknown error verifying Carrot user (%d): %@", httpResponse.statusCode, error);
-             [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
-          }
-          else
-          {
-             switch(httpResponse.statusCode)
-             {
-                case 404:
-                {
-                   // Not found, add user
-                   self.authenticationStatus = CarrotAuthenticationStatusNotAuthorized;
-                   [self addUser];
-                   break;
-                }
-                default:
-                {
-                   if(![self updateAuthenticationStatus:httpResponse.statusCode])
-                   {
-                      NSLog(@"Unknown error verifying Carrot user (%d): %@", httpResponse.statusCode, jsonReply);
-                      self.authenticationStatus = CarrotAuthenticationStatusUndetermined;
-                   }
-                }
-             }
-          }
-       }
-    }];
-}
-
-- (void)addUser
-{
-   if(!self.accessToken) return;
+   if(!self.accessToken)
+   {
+      [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined];
+      return;
+   }
 
    NSString* urlString = [NSString stringWithFormat:@"https://%@/games/%@/users.json", self.hostname, self.appId];
    NSMutableURLRequest* urlRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlString]];
