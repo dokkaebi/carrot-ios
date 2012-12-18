@@ -34,6 +34,15 @@ typedef enum CarrotAuthenticationStatus {
 
 #ifdef __OBJC__
 
+/**
+ * Block type for the completion of Carrot queries for lists of data.
+ *
+ * Callback triggered on the completion of the following methods:
+ * - getFriendScores:
+ * - getUserAchievements:
+ */
+typedef void (^CarrotListQueryResult)(NSArray* list, NSError* error);
+
 @protocol CarrotDelegate;
 
 /**
@@ -276,6 +285,13 @@ typedef enum CarrotAuthenticationStatus {
 - (BOOL)postAchievement:(NSString*)achievementId;
 
 /**
+ * Get the list of achievements earned for the current Carrot user.
+ *
+ * @param callback The block to be called upon completion of this method.
+ */
+- (void)getUserAchievements:(CarrotListQueryResult)callback;
+
+/**
  * Post a high score to the Carrot service.
  *
  * @param score         The value of the score to post.
@@ -293,6 +309,13 @@ typedef enum CarrotAuthenticationStatus {
  * @returns YES if the request was cached successfully, and will be sent when possible.
  */
 - (BOOL)postHighScore:(NSUInteger)score toLeaderboard:(NSString*)leaderboardId;
+
+/**
+ * Get the list of high scores for the current Carrot user and their Facebook friends.
+ *
+ * @param callback The block to be called upon completion of this method.
+ */
+- (void)getFriendScores:(CarrotListQueryResult)callback;
 
 /**
  * Post an Open Graph action with an existing object to the Carrot service.
