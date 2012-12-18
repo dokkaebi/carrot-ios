@@ -371,7 +371,7 @@ static NSString* sCarrotDebugUDID = nil;
    NSString* postBody = [NSString stringWithFormat:@"api_key=%@&access_token=%@", self.udid, self.accessToken];
 
    NSData* postData = [postBody dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
-   [urlRequest setHTTPMethod:@"POST"];
+   [urlRequest setHTTPMethod:CarrotRequestTypePOST];
    [urlRequest setHTTPBody:postData];
    [urlRequest setValue:[NSString stringWithFormat:@"%d", [postData length]]
      forHTTPHeaderField:@"Content-Length"];
@@ -409,6 +409,7 @@ static NSString* sCarrotDebugUDID = nil;
    if(deviceTokenString)
    {
       [self.requestThread addRequestForEndpoint:@"/me/devices.json"
+                                        usingMethod:CarrotRequestTypePOST
                                     withPayload:@{@"device_type" : @"ios",
                                                   @"push_key" : deviceTokenString}];
    }
@@ -417,6 +418,7 @@ static NSString* sCarrotDebugUDID = nil;
 - (BOOL)postAchievement:(NSString*)achievementId
 {
    return [self.requestThread addRequestForEndpoint:@"/me/achievements.json"
+                                        usingMethod:CarrotRequestTypePOST
                                         withPayload:@{@"achievement_id" : achievementId}];
 }
 
@@ -432,6 +434,7 @@ static NSString* sCarrotDebugUDID = nil;
       payload = @{@"value" : [NSNumber numberWithLong:score]};
    }
    return [self.requestThread addRequestForEndpoint:@"/me/scores.json"
+                                        usingMethod:CarrotRequestTypePOST
                                         withPayload:payload];
 }
 
@@ -455,6 +458,7 @@ static NSString* sCarrotDebugUDID = nil;
    }
 
    return [self.requestThread addRequestForEndpoint:@"/me/actions.json"
+                                        usingMethod:CarrotRequestTypePOST
                                         withPayload:payload];
 }
 
@@ -507,18 +511,21 @@ static NSString* sCarrotDebugUDID = nil;
    }
 
    return [self.requestThread addRequestForEndpoint:@"/me/actions.json"
+                                        usingMethod:CarrotRequestTypePOST
                                         withPayload:payload];
 }
 
 -(BOOL)likeGame
 {
    return [self.requestThread addRequestForEndpoint:@"/me/like.json"
+                                        usingMethod:CarrotRequestTypePOST
                                         withPayload:@{@"object" : @"game"}];
 }
 
 -(BOOL)likePublisher
 {
    return [self.requestThread addRequestForEndpoint:@"/me/like.json"
+                                        usingMethod:CarrotRequestTypePOST
                                         withPayload:@{@"object" : @"publisher"}];
 }
 
@@ -526,6 +533,7 @@ static NSString* sCarrotDebugUDID = nil;
 {
    NSString* likeObject = [NSString stringWithFormat:@"achievement:%@", achievementId];
    return [self.requestThread addRequestForEndpoint:@"/me/like.json"
+                                        usingMethod:CarrotRequestTypePOST
                                         withPayload:@{@"object" : likeObject}];
 }
 
@@ -533,6 +541,7 @@ static NSString* sCarrotDebugUDID = nil;
 {
    NSString* likeObject = [NSString stringWithFormat:@"object:%@", objectInstanceId];
    return [self.requestThread addRequestForEndpoint:@"/me/like.json"
+                                        usingMethod:CarrotRequestTypePOST
                                         withPayload:@{@"object" : likeObject}];
 }
 

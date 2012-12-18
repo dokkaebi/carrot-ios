@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
+#import "Carrot+Internal.h"
 #import "CarrotCachedRequest.h"
+#import "CarrotRequestThread.h"
 
 #define kCacheCreateSQL "CREATE TABLE IF NOT EXISTS cache(request_endpoint TEXT, request_payload TEXT, request_id TEXT, request_date REAL, retry_count INTEGER)"
 #define kCacheReadSQL "SELECT rowid, request_endpoint, request_payload, request_id, request_date, retry_count FROM cache ORDER BY retry_count"
@@ -23,8 +25,6 @@
 
 @interface CarrotCachedRequest ()
 
-@property (strong, nonatomic, readwrite) NSString* endpoint;
-@property (strong, nonatomic, readwrite) NSDictionary* payload;
 @property (strong, nonatomic, readwrite) NSString* requestId;
 @property (strong, nonatomic, readwrite) NSDate* dateIssued;
 @property (nonatomic, readwrite) NSUInteger retryCount;
@@ -157,25 +157,22 @@
 
 - (id)initWithEndpoint:(NSString*)endpoint payload:(NSDictionary*)payload requestId:(NSString*)requestId cacheId:(sqlite_uint64)cacheId dateIssued:(NSDate*)dateIssued retryCount:(NSUInteger)retryCount
 {
-   self = [super init];
+   NSMutableDictionary* finalPayload = [payload mutableCopy];
+   [finalPayload setObject:requestId forKey:@"request_id"];
+   [finalPayload setObject:[NSNumber numberWithLongLong:(uint64_t)[dateIssued timeIntervalSince1970]] forKey:@"request_date"];
+
+   self = [super initWithEndpoint:endpoint usingMethod:CarrotRequestTypePOST payload:finalPayload callback:^(NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread) {
+      [self requestCallbackStatus:response data:data thread:requestThread];
+   }];
+
    if(self)
    {
-      self.endpoint = endpoint;
-      self.payload = payload;
       self.requestId = requestId;
       self.cacheId = cacheId;
       self.dateIssued = dateIssued;
       self.retryCount = retryCount;
    }
    return self;
-}
-
-- (void)deinit
-{
-   self.endpoint = nil;
-   self.payload = nil;
-   self.requestId = nil;
-   self.dateIssued = nil;
 }
 
 - (BOOL)removeFromCache:(sqlite3*)cache
@@ -233,6 +230,58 @@
 - (NSString*)description
 {
    return [NSString stringWithFormat:@"Carrot Request: {\n\t'request_endpoint':'%@',\n\t'request_payload':'%@',\n\t'request_id':'%@',\n\t'request_date':'%@',\n\t'retry_count':'%d'\n}", self.endpoint, self.payload, self.requestId, self.dateIssued, self.retryCount];
+}
+
+- (void)requestCallbackStatus:(NSHTTPURLResponse*)response data:(NSData*)data thread:(CarrotRequestThread*)requestThread
+{
+   NSError* error = nil;
+   NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+   if(response.statusCode == 404)
+   {
+      NSLog(@"Carrot resource not found, removing request from cache.");
+      @synchronized(requestThread.requestQueue)
+      {
+         [self removeFromCache:requestThread.sqliteDb];
+      }
+   }
+   else if([[Carrot sharedInstance] updateAuthenticationStatus:response.statusCode])
+   {
+      if([Carrot sharedInstance].authenticationStatus == CarrotAuthenticationStatusReady)
+      {
+         @synchronized(requestThread.requestQueue)
+         {
+            [self removeFromCache:requestThread.sqliteDb];
+         }
+      }
+      else
+      {
+         @synchronized(requestThread.requestQueue)
+         {
+            [self addRetryInCache:requestThread.sqliteDb];
+         }
+      }
+   }
+   else
+   {
+      NSLog(@"Unknown error (%d) submitting Carrot request: %@\nJSON:%@",
+            response.statusCode, self, jsonReply);
+      if(requestThread.maxRetryCount > 0 && self.retryCount > requestThread.maxRetryCount)
+      {
+         // Remove request, never retry
+         NSLog(@"Removing request from Carrot cache, too many retries.");
+         @synchronized(requestThread.requestQueue)
+         {
+            [self removeFromCache:requestThread.sqliteDb];
+         }
+      }
+      else
+      {
+         @synchronized(requestThread.requestQueue)
+         {
+            [self addRetryInCache:requestThread.sqliteDb];
+         }
+      }
+   }
 }
 
 @end

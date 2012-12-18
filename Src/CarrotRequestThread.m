@@ -19,13 +19,13 @@
 #import "CarrotCachedRequest.h"
 #import "AmazonSDKUtil.h"
 
-#include <sqlite3.h>
 #include <CommonCrypto/CommonHMAC.h>
 
 @interface CarrotRequestThread ()
 
-@property (strong, nonatomic) NSMutableArray* requestQueue;
-@property (nonatomic) sqlite3* sqliteDb;
+@property (strong, nonatomic) NSMutableArray* internalRequestQueue;
+@property (weak, nonatomic, readwrite) NSArray* requestQueue;
+@property (nonatomic, readwrite) sqlite3* sqliteDb;
 @property (assign, nonatomic) Carrot* carrot;
 @property (nonatomic) BOOL keepThreadRunning;
 
@@ -43,7 +43,8 @@ NSString* URLEscapedString(NSString* inString)
    self = [super init];
    if(self)
    {
-      self.requestQueue = [[NSMutableArray alloc] init];
+      self.internalRequestQueue = [[NSMutableArray alloc] init];
+      self.requestQueue = self.internalRequestQueue;
       self.carrot = carrot;
       self.maxRetryCount = 0; // Infinite retries by default
       _isRunning = NO;
@@ -85,7 +86,7 @@ NSString* URLEscapedString(NSString* inString)
 
 - (void)dealloc
 {
-   self.requestQueue = nil;
+   self.internalRequestQueue = nil;
 
    sqlite3_close(_sqliteDb);
    _sqliteDb = nil;
@@ -108,25 +109,69 @@ NSString* URLEscapedString(NSString* inString)
    }
 }
 
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint withPayload:(NSDictionary*)payload
+- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload
 {
-   CarrotCachedRequest* cachedRequest =
-   [CarrotCachedRequest requestForEndpoint:endpoint
-                               withPayload:payload
-                                   inCache:self.sqliteDb
-                     synchronizingOnObject:self.requestQueue];
+   return [self addRequestForEndpoint:endpoint usingMethod:method withPayload:payload callback:nil atFront:NO];
+}
 
-   if(cachedRequest)
+- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback
+{
+      return [self addRequestForEndpoint:endpoint usingMethod:method withPayload:payload callback:callback atFront:NO];
+}
+
+- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront
+{
+   if(method == CarrotRequestTypeGET)
    {
       dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-         @synchronized(self.requestQueue)
+         @synchronized(self.internalRequestQueue)
          {
-            [self.requestQueue addObject:cachedRequest];
+            if(atFront)
+            {
+               [self.internalRequestQueue insertObject:[CarrotRequest requestForEndpoint:endpoint
+                                                                          usingMethod:method
+                                                                          withPayload:payload
+                                                                             callback:callback]
+                                               atIndex:0];
+            }
+            else
+            {
+               [self.internalRequestQueue addObject:[CarrotRequest requestForEndpoint:endpoint
+                                                                          usingMethod:method
+                                                                          withPayload:payload
+                                                                             callback:callback]];
+            }
          }
       });
+      return true;
    }
+   else
+   {
+      CarrotCachedRequest* cachedRequest =
+      [CarrotCachedRequest requestForEndpoint:endpoint
+                                  withPayload:payload
+                                      inCache:self.sqliteDb
+                        synchronizingOnObject:self.requestQueue];
 
-   return (cachedRequest != nil);
+      if(cachedRequest)
+      {
+         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            @synchronized(self.requestQueue)
+            {
+               if(atFront)
+               {
+                  [self.internalRequestQueue insertObject:cachedRequest atIndex:0];
+               }
+               else
+               {
+                  [self.internalRequestQueue addObject:cachedRequest];
+               }
+            }
+         });
+      }
+
+      return (cachedRequest != nil);
+   }
 }
 
 - (BOOL)loadQueueFromCache
@@ -135,12 +180,12 @@ NSString* URLEscapedString(NSString* inString)
    @synchronized(self.requestQueue)
    {
       NSArray* cachedRequests = [CarrotCachedRequest requestsInCache:self.sqliteDb];
-      [self.requestQueue addObjectsFromArray:cachedRequests];
+      [self.internalRequestQueue addObjectsFromArray:cachedRequests];
    }
    return ret;
 }
 
-- (NSString*)signedPostBody:(CarrotCachedRequest*)request
+- (NSString*)signedPostBody:(CarrotRequest*)request
 {
    NSString* host = self.carrot.hostname;
    NSString* path = request.endpoint;
@@ -149,9 +194,7 @@ NSString* URLEscapedString(NSString* inString)
    // Build query dict
    NSDictionary* commonQueryDict = @{
       @"api_key" : self.carrot.udid,
-      @"game_id" : self.carrot.appId,
-      @"request_id" : request.requestId,
-      @"request_date" : [NSNumber numberWithLongLong:(uint64_t)[request.dateIssued timeIntervalSince1970]]
+      @"game_id" : self.carrot.appId
    };
 
    NSMutableDictionary* queryParamDict = [NSMutableDictionary dictionaryWithDictionary:request.payload];
@@ -186,7 +229,7 @@ NSString* URLEscapedString(NSString* inString)
        (i + 1 < queryKeysSorted.count ? "&" : "")];
    }
 
-   NSString* stringToSign = [NSString stringWithFormat:@"POST\n%@\n%@\n%@", host, path,
+   NSString* stringToSign = [NSString stringWithFormat:@"%@\n%@\n%@\n%@", request.method, host, path,
                              sortedQueryString];
 
    NSData* dataToSign = [stringToSign dataUsingEncoding:NSUTF8StringEncoding];
@@ -248,21 +291,24 @@ NSString* URLEscapedString(NSString* inString)
             if(request)
             {
                NSString* postBody = [self signedPostBody:request];
-               NSData* postData = [postBody dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
 
-               // Remove query, all params will be in HTTP body
-               NSMutableURLRequest* preppedRequest = [NSMutableURLRequest requestWithURL:
-                                                      [NSURL URLWithString:
-                                                       [NSString stringWithFormat:@"https://%@%@",
-                                                        self.carrot.hostname,
-                                                        request.endpoint]]];
+               NSMutableURLRequest* preppedRequest = nil;
+               if(request.method == CarrotRequestTypePOST)
+               {
+                  NSData* postData = [postBody dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
+                  preppedRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@%@", self.carrot.hostname, request.endpoint]]];
 
-               [preppedRequest setHTTPMethod:@"POST"];
-               [preppedRequest setHTTPBody:postData];
-               [preppedRequest setValue:[NSString stringWithFormat:@"%d", [postData length]]
-                     forHTTPHeaderField:@"Content-Length"];
-               [preppedRequest setValue:@"application/x-www-form-urlencoded"
-                     forHTTPHeaderField:@"Content-Type"];
+                  [preppedRequest setHTTPBody:postData];
+                  [preppedRequest setValue:[NSString stringWithFormat:@"%d", [postData length]]
+                        forHTTPHeaderField:@"Content-Length"];
+                  [preppedRequest setValue:@"application/x-www-form-urlencoded"
+                        forHTTPHeaderField:@"Content-Type"];
+               }
+               else
+               {
+                  preppedRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@%@?%@", self.carrot.hostname, request.endpoint, postBody]]];
+               }
+               [preppedRequest setHTTPMethod:request.method];
 
                // Allocate response
                NSHTTPURLResponse* response = [[NSHTTPURLResponse alloc]
@@ -277,65 +323,19 @@ NSString* URLEscapedString(NSString* inString)
                                                     returningResponse:&response
                                                                 error:&error];
 
+               // Handle response
                if(error)
                {
                   NSLog(@"Error submitting Carrot request: %@", error);
                }
-               else
+               else if(request.callback)
                {
-                  NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-                  if(response.statusCode == 404)
-                  {
-                     NSLog(@"Carrot resource not found, removing request from cache.");
-                     @synchronized(self.requestQueue)
-                     {
-                        [request removeFromCache:self.sqliteDb];
-                     }
-                  }
-                  else if([[Carrot sharedInstance] updateAuthenticationStatus:response.statusCode])
-                  {
-                     if(self.carrot.authenticationStatus == CarrotAuthenticationStatusReady)
-                     {
-                        @synchronized(self.requestQueue)
-                        {
-                           [request removeFromCache:self.sqliteDb];
-                        }
-                     }
-                     else
-                     {
-                        @synchronized(self.requestQueue)
-                        {
-                           [request addRetryInCache:self.sqliteDb];
-                        }
-                     }
-                  }
-                  else
-                  {
-                     NSLog(@"Unknown error (%d) submitting Carrot request: %@\nJSON:%@",
-                           response.statusCode, request, jsonReply);
-                     if(self.maxRetryCount > 0 && request.retryCount > self.maxRetryCount)
-                     {
-                        // Remove request, never retry
-                        NSLog(@"Removing request from Carrot cache, too many retries.");
-                        @synchronized(self.requestQueue)
-                        {
-                           [request removeFromCache:self.sqliteDb];
-                        }
-                     }
-                     else
-                     {
-                        @synchronized(self.requestQueue)
-                        {
-                           [request addRetryInCache:self.sqliteDb];
-                        }
-                     }
-                  }
+                  request.callback(response, data, self);
                }
 
-               // Remove request, if retry is needed it will happen later
                @synchronized(self.requestQueue)
                {
-                  [self.requestQueue removeObjectAtIndex:0];
+                  [self.internalRequestQueue removeObjectAtIndex:0];
                }
             }
             else

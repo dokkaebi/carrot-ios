@@ -41,6 +41,8 @@
 		437A1C2915FA66FA00971F2E /* OpenUDID.m in Sources */ = {isa = PBXBuildFile; fileRef = 437A1C2315FA66FA00971F2E /* OpenUDID.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		437A1C2A15FA66FA00971F2E /* Reachability.h in Headers */ = {isa = PBXBuildFile; fileRef = 437A1C2415FA66FA00971F2E /* Reachability.h */; };
 		437A1C2B15FA66FA00971F2E /* Reachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 437A1C2515FA66FA00971F2E /* Reachability.m */; };
+		43B9F294167FDB3B00CDD5F8 /* CarrotRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 43B9F292167FDB3B00CDD5F8 /* CarrotRequest.h */; };
+		43B9F295167FDB3B00CDD5F8 /* CarrotRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 43B9F293167FDB3B00CDD5F8 /* CarrotRequest.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,6 +76,8 @@
 		437A1C2315FA66FA00971F2E /* OpenUDID.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenUDID.m; sourceTree = "<group>"; };
 		437A1C2415FA66FA00971F2E /* Reachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Reachability.h; sourceTree = "<group>"; };
 		437A1C2515FA66FA00971F2E /* Reachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Reachability.m; sourceTree = "<group>"; };
+		43B9F292167FDB3B00CDD5F8 /* CarrotRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CarrotRequest.h; path = Src/CarrotRequest.h; sourceTree = SOURCE_ROOT; };
+		43B9F293167FDB3B00CDD5F8 /* CarrotRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CarrotRequest.m; path = Src/CarrotRequest.m; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +129,8 @@
 				437A1C1515FA66E900971F2E /* CarrotCAPI.m */,
 				433F6C461605236700CA65A2 /* CarrotFacebook.m */,
 				43679B2E1602A3840042CC31 /* CarrotHooks.m */,
+				43B9F292167FDB3B00CDD5F8 /* CarrotRequest.h */,
+				43B9F293167FDB3B00CDD5F8 /* CarrotRequest.m */,
 				437A1C1615FA66E900971F2E /* CarrotRequestThread.h */,
 				437A1C1715FA66E900971F2E /* CarrotRequestThread.m */,
 				431CFFA11627374B00D74667 /* Carrot+Internal.h */,
@@ -171,6 +177,7 @@
 				437A1C2815FA66FA00971F2E /* OpenUDID.h in Headers */,
 				437A1C2A15FA66FA00971F2E /* Reachability.h in Headers */,
 				431CFFA3162737C000D74667 /* Carrot+Internal.h in Headers */,
+				43B9F294167FDB3B00CDD5F8 /* CarrotRequest.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -268,6 +275,7 @@
 				437A1C2B15FA66FA00971F2E /* Reachability.m in Sources */,
 				43679B2F1602A3840042CC31 /* CarrotHooks.m in Sources */,
 				433F6C471605236700CA65A2 /* CarrotFacebook.m in Sources */,
+				43B9F295167FDB3B00CDD5F8 /* CarrotRequest.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

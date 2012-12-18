@@ -14,12 +14,11 @@
  */
 
 #import <Foundation/Foundation.h>
+#import "CarrotRequest.h"
 #include <sqlite3.h>
 
-@interface CarrotCachedRequest : NSObject
+@interface CarrotCachedRequest : CarrotRequest
 
-@property (strong, nonatomic, readonly) NSString* endpoint;
-@property (strong, nonatomic, readonly) NSDictionary* payload;
 @property (strong, nonatomic, readonly) NSString* requestId;
 @property (strong, nonatomic, readonly) NSDate* dateIssued;
 @property (nonatomic, readonly) NSUInteger retryCount;

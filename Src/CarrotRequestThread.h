@@ -14,6 +14,8 @@
  */
 
 #import <Foundation/Foundation.h>
+#import "CarrotRequest.h"
+#include <sqlite3.h>
 
 @class Carrot;
 
@@ -21,9 +23,13 @@
 
 @property (nonatomic, readonly) BOOL isRunning;
 @property (nonatomic) NSUInteger maxRetryCount; // 0 = infinite
+@property (nonatomic, readonly) sqlite3* sqliteDb;
+@property (weak, nonatomic, readonly) NSArray* requestQueue;
 
 - (id)initWithCarrot:(Carrot*)carrot;
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint withPayload:(NSDictionary*)payload;
+- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload;
+- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback;
+- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront;
 - (void)start;
 - (void)stop;
 
