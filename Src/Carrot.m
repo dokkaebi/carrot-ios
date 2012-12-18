@@ -424,11 +424,7 @@ static NSString* sCarrotDebugUDID = nil;
 
 - (void)getUserAchievements:(CarrotListQueryResult)callback
 {
-   [self.requestThread addRequestForEndpoint:@"/me/achievements.json"
-                                 usingMethod:CarrotRequestTypeGET
-                                 withPayload:@{}
-                                    callback:
-    ^(NSHTTPURLResponse *response, NSData *data, CarrotRequestThread *requestThread) {
+   [self getUserAchievementsEx:^(NSHTTPURLResponse* response, NSData* data) {
        NSError* error = nil;
        NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
       if(error)
@@ -437,13 +433,26 @@ static NSString* sCarrotDebugUDID = nil;
       }
       else if([jsonReply objectForKey:@"error"])
       {
-         callback(nil, [NSError errorWithDomain:@"Carrot" code:-1 userInfo:[jsonReply objectForKey:@"error"]]);
+         NSDictionary* jsonError = [jsonReply objectForKey:@"error"];
+         callback(nil, [NSError errorWithDomain:@"Carrot"
+                                           code:[(NSNumber*)[jsonError objectForKey:@"code"] intValue]
+                                       userInfo:@{@"NSLocalizedDescriptionKey": [jsonError objectForKey:@"message"]}]);
       }
       else
       {
          callback([jsonReply objectForKey:@"data"], nil);
       }
-   }
+   }];
+}
+
+- (void)getUserAchievementsEx:(CarrotRequestResponseEx)callback
+{
+   [self.requestThread addRequestForEndpoint:@"/me/achievements.json"
+                                 usingMethod:CarrotRequestTypeGET
+                                 withPayload:@{}
+                                    callback:^(NSHTTPURLResponse *response, NSData *data, CarrotRequestThread *requestThread) {
+                                       callback(response, data);
+                                    }
                                      atFront:YES];
 }
 
@@ -470,10 +479,7 @@ static NSString* sCarrotDebugUDID = nil;
 
 - (void)getFriendScores:(CarrotListQueryResult)callback
 {
-   [self.requestThread addRequestForEndpoint:@"/me/scores.json"
-                                 usingMethod:CarrotRequestTypeGET
-                                 withPayload:@{}
-    callback:^(NSHTTPURLResponse *response, NSData *data, CarrotRequestThread *requestThread) {
+   [self getFriendScoresEx:^(NSHTTPURLResponse *response, NSData *data) {
        NSError* error = nil;
        NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
        if(error)
@@ -482,13 +488,26 @@ static NSString* sCarrotDebugUDID = nil;
        }
        else if([jsonReply objectForKey:@"error"])
        {
-          callback(nil, [NSError errorWithDomain:@"Carrot" code:-1 userInfo:[jsonReply objectForKey:@"error"]]);
+          NSDictionary* jsonError = [jsonReply objectForKey:@"error"];
+          callback(nil, [NSError errorWithDomain:@"Carrot"
+                                            code:[(NSNumber*)[jsonError objectForKey:@"code"] intValue]
+                                        userInfo:@{@"NSLocalizedDescriptionKey": [jsonError objectForKey:@"message"]}]);
        }
        else
        {
           callback([jsonReply objectForKey:@"data"], nil);
        }
-    }
+   }];
+}
+
+- (void)getFriendScoresEx:(CarrotRequestResponseEx)callback
+{
+   [self.requestThread addRequestForEndpoint:@"/me/scores.json"
+                                 usingMethod:CarrotRequestTypeGET
+                                 withPayload:@{}
+                                    callback:^(NSHTTPURLResponse *response, NSData *data, CarrotRequestThread *requestThread) {
+                                       callback(response, data);
+                                    }
                                      atFront:YES];
 }
 

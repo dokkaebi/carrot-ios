@@ -80,10 +80,54 @@ int Carrot_PostAchievement(const char* achievementId)
    return [[Carrot sharedInstance] postAchievement:[NSString stringWithUTF8String:achievementId]];
 }
 
+void Carrot_GetUserAchievements(CarrotListQueryResultPtr callback)
+{
+   [[Carrot sharedInstance] getUserAchievements:^(NSArray* list, NSError* error) {
+      if(error)
+      {
+         callback(NULL, [[error localizedDescription] UTF8String]);
+      }
+      else
+      {
+         NSData* jsonData = [NSJSONSerialization dataWithJSONObject:list options:0 error:&error];
+         if(error)
+         {
+            callback(NULL, [[error localizedDescription] UTF8String]);
+         }
+         else
+         {
+            callback([[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding] UTF8String], NULL);
+         }
+      }
+   }];
+}
+
 int Carrot_PostHighScore(unsigned int score, const char* leaderboardId)
 {
    NSString* leaderboardIdString = (leaderboardId ? [NSString stringWithUTF8String:leaderboardId] : nil);
    return [[Carrot sharedInstance] postHighScore:score toLeaderboard:leaderboardIdString];
+}
+
+void Carrot_GetFriendScores(CarrotListQueryResultPtr callback)
+{
+   [[Carrot sharedInstance] getFriendScores:^(NSArray* list, NSError* error) {
+      if(error)
+      {
+         callback(NULL, [[error localizedDescription] UTF8String]);
+      }
+      else
+      {
+         NSData* jsonData = [NSJSONSerialization dataWithJSONObject:list options:0 error:&error];
+         if(error)
+         {
+            callback(NULL, [[error localizedDescription] UTF8String]);
+         }
+         else
+         {
+            callback([[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding] UTF8String], NULL);
+         }
+      }
+   }];
 }
 
 int Carrot_PostInstanceAction(const char* actionId, const char* actionPropertiesJson,
