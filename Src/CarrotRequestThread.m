@@ -107,7 +107,11 @@ NSString* URLEscapedString(NSString* inString)
 {
    if(self.isRunning)
    {
+      // Signal thread to start up if it is waiting
+      [self.requestQueuePause lock];
       self.keepThreadRunning = NO;
+      [self.requestQueuePause signal];
+      [self.requestQueuePause unlock];
    }
 }
 
@@ -355,7 +359,7 @@ NSString* URLEscapedString(NSString* inString)
                [self loadQueueFromCache];
 
                // If queue is still empty, wait until it's not empty.
-               while([self.internalRequestQueue count] < 1) {
+               while([self.internalRequestQueue count] < 1 && self.keepThreadRunning) {
                   [self.requestQueuePause wait];
                }
                [self.requestQueuePause unlock];
