@@ -28,6 +28,7 @@
 @property (nonatomic, readwrite) sqlite3* sqliteDb;
 @property (assign, nonatomic) Carrot* carrot;
 @property (nonatomic) BOOL keepThreadRunning;
+@property (strong, nonatomic) NSCondition* requestQueuePause;
 
 @end
 
@@ -47,6 +48,7 @@ NSString* URLEscapedString(NSString* inString)
       self.requestQueue = self.internalRequestQueue;
       self.carrot = carrot;
       self.maxRetryCount = 0; // Infinite retries by default
+      self.requestQueuePause = [[NSCondition alloc] init];
       _isRunning = NO;
 
       // Init sqlite
@@ -121,6 +123,7 @@ NSString* URLEscapedString(NSString* inString)
 
 - (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront
 {
+   BOOL ret = YES;
    if(method == CarrotRequestTypeGET)
    {
       dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -143,7 +146,6 @@ NSString* URLEscapedString(NSString* inString)
             }
          }
       });
-      return true;
    }
    else
    {
@@ -170,8 +172,15 @@ NSString* URLEscapedString(NSString* inString)
          });
       }
 
-      return (cachedRequest != nil);
+      ret = (cachedRequest != nil);
    }
+
+   // Signal thread to start up if it is waiting
+   [self.requestQueuePause lock];
+   [self.requestQueuePause signal];
+   [self.requestQueuePause unlock];
+
+   return ret;
 }
 
 - (BOOL)loadQueueFromCache
@@ -340,13 +349,18 @@ NSString* URLEscapedString(NSString* inString)
             }
             else
             {
+               [self.requestQueuePause lock];
+
                // Populate cache
                [self loadQueueFromCache];
+
+               // If queue is still empty, wait until it's not empty.
+               while([self.internalRequestQueue count] < 1) {
+                  [self.requestQueuePause wait];
+               }
+               [self.requestQueuePause unlock];
             }
          }
-
-         // Sleep
-         sleep(5);
       }
    }
    _isRunning = NO;
