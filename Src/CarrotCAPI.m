@@ -102,10 +102,9 @@ void Carrot_GetUserAchievements(CarrotListQueryResultPtr callback)
    }];
 }
 
-int Carrot_PostHighScore(unsigned int score, const char* leaderboardId)
+int Carrot_PostHighScore(unsigned int score)
 {
-   NSString* leaderboardIdString = (leaderboardId ? [NSString stringWithUTF8String:leaderboardId] : nil);
-   return [[Carrot sharedInstance] postHighScore:score toLeaderboard:leaderboardIdString];
+   return [[Carrot sharedInstance] postHighScore:score];
 }
 
 void Carrot_GetFriendScores(CarrotListQueryResultPtr callback)

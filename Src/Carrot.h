@@ -317,16 +317,6 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
 - (BOOL)postHighScore:(NSUInteger)score;
 
 /**
- * Post a high score to the Carrot service to a specific leaderboard.
- *
- * @param score         The value of the score to post.
- * @param leaderboardId The identifier for the leaderboard to which the score is being posted.
- *
- * @returns YES if the request was cached successfully, and will be sent when possible.
- */
-- (BOOL)postHighScore:(NSUInteger)score toLeaderboard:(NSString*)leaderboardId;
-
-/**
  * Get the list of high scores for the current Carrot user and their Facebook friends.
  *
  * @param callback The block to be called upon completion of this method.
@@ -514,12 +504,11 @@ extern void Carrot_GetUserAchievements(CarrotListQueryResultPtr callback);
 /**
  * Post a high score to the Carrot service.
  *
- * @param score         The value of the score to post.
- * @param leaderboardId The identifier for the leaderboard to which the score is being posted.
+ * @param score The value of the score to post.
  *
  * @returns 1 if the request was cached successfully, and will be sent when possible.
  */
-extern int Carrot_PostHighScore(unsigned int score, const char* leaderboardId);
+extern int Carrot_PostHighScore(unsigned int score);
 
 /**
  * Get the list of high scores for the current Carrot user and their Facebook friends.

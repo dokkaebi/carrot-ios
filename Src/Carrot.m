@@ -456,25 +456,12 @@ static NSString* sCarrotDebugUDID = nil;
                                      atFront:YES];
 }
 
-- (BOOL)postHighScore:(NSUInteger)score toLeaderboard:(NSString*)leaderboardId
+- (BOOL)postHighScore:(NSUInteger)score
 {
-   NSDictionary* payload = nil;
-   if(leaderboardId != nil)
-   {
-      payload = @{@"value" : [NSNumber numberWithLong:score], @"leaderboard_id" : leaderboardId};
-   }
-   else
-   {
-      payload = @{@"value" : [NSNumber numberWithLong:score]};
-   }
+   NSDictionary* payload = @{@"value" : [NSNumber numberWithLong:score]};
    return [self.requestThread addRequestForEndpoint:@"/me/scores.json"
                                         usingMethod:CarrotRequestTypePOST
                                         withPayload:payload];
-}
-
-- (BOOL)postHighScore:(NSUInteger)score
-{
-   return [self postHighScore:score toLeaderboard:nil];
 }
 
 - (void)getFriendScores:(CarrotListQueryResult)callback
