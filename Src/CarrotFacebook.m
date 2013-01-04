@@ -35,7 +35,13 @@ BOOL Carrot_HandleOpenURLFacebookSDK(NSURL* url)
 
 void Carrot_HandleApplicationDidBecomeActive()
 {
-  [[FBSession activeSession] handleDidBecomeActive];
+   [[FBSession activeSession] handleDidBecomeActive];
+
+   // If session is available, resume it
+   if([[FBSession activeSession] openActiveSessionWithAllowLoginUI:NO])
+   {
+      [[Carrot sharedInstance] setAccessToken:[[FBSession activeSession] accessToken]];
+   }
 }
 
 static void (^Carrot_FacebookSDKCompletionHandler)(FBSession*, FBSessionState, NSError*) = ^(FBSession* session, FBSessionState status, NSError* error)
