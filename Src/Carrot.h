@@ -35,15 +35,6 @@ typedef enum CarrotAuthenticationStatus {
 #ifdef __OBJC__
 
 /**
- * Block type for the completion of Carrot queries for lists of data.
- *
- * Callback triggered on the completion of the following methods:
- * - getFriendScores:
- * - getUserAchievements:
- */
-typedef void (^CarrotListQueryResult)(NSArray* list, NSError* error);
-
-/**
  * Block type for the completion of Carrot requests.
  *
  * Callback triggered on the completion of the following methods:
@@ -294,20 +285,6 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
 - (BOOL)postAchievement:(NSString*)achievementId;
 
 /**
- * Get the list of achievements earned for the current Carrot user.
- *
- * @param callback The block to be called upon completion of this method.
- */
-- (void)getUserAchievements:(CarrotListQueryResult)callback;
-
-/**
- * Get the list of achievements earned for the current Carrot user in extended form.
- *
- * @param callback The block to be called upon completion of this method.
- */
-- (void)getUserAchievementsEx:(CarrotRequestResponseEx)callback;
-
-/**
  * Post a high score to the Carrot service.
  *
  * @param score         The value of the score to post.
@@ -315,21 +292,6 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
  * @returns YES if the request was cached successfully, and will be sent when possible.
  */
 - (BOOL)postHighScore:(NSUInteger)score;
-
-/**
- * Get the list of high scores for the current Carrot user and their Facebook friends.
- *
- * @param callback The block to be called upon completion of this method.
- */
-- (void)getFriendScores:(CarrotListQueryResult)callback;
-
-/**
- * Get the list of high scores for the current Carrot user and their Facebook
- * friends in extended form.
- *
- * @param callback The block to be called upon completion of this method.
- */
-- (void)getFriendScoresEx:(CarrotRequestResponseEx)callback;
 
 /**
  * Post an Open Graph action with an existing object to the Carrot service.
@@ -454,7 +416,6 @@ extern "C" {
 
 typedef void (*CarrotAuthStatusPtr)(const void* context, int status, NSError* error);
 typedef void (*CarrotAppLinkPtr)(const void* context, const char* targetURL);
-typedef void (*CarrotListQueryResultPtr)(const char* listJson, const char* error);
 
 /**
  * Assign a Facebook Application ID.
@@ -495,13 +456,6 @@ extern void Carrot_SetAccessToken(const char* accessToken);
 extern int Carrot_PostAchievement(const char* achievementId);
 
 /**
- * Get the list of achievements earned for the current Carrot user.
- *
- * @param callback The function to be called upon completion of this method.
- */
-extern void Carrot_GetUserAchievements(CarrotListQueryResultPtr callback);
-
-/**
  * Post a high score to the Carrot service.
  *
  * @param score The value of the score to post.
@@ -509,13 +463,6 @@ extern void Carrot_GetUserAchievements(CarrotListQueryResultPtr callback);
  * @returns 1 if the request was cached successfully, and will be sent when possible.
  */
 extern int Carrot_PostHighScore(unsigned int score);
-
-/**
- * Get the list of high scores for the current Carrot user and their Facebook friends.
- *
- * @param callback The function to be called upon completion of this method.
- */
-extern void Carrot_GetFriendScores(CarrotListQueryResultPtr callback);
 
 /**
  * Post an Open Graph action with an existing object to the Carrot service.
