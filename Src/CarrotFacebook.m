@@ -129,13 +129,26 @@ int Carrot_DoFacebookAuth(int allowLoginUI, int permission)
    {
       ret = 1;
       sCarrotDidFacebookSDKAuth = YES;
-      [[FBSession activeSession]
-       reauthorizeWithPublishPermissions:permissionsArray
-                         defaultAudience:FBSessionDefaultAudienceFriends
-                       completionHandler:Carrot_FacebookSDKReauthorizeHandler];
+
+      // 3.2.1 method
+      if([FBSession instancesRespondToSelector:@selector(requestNewPublishPermissions:defaultAudience:completionHandler:)])
+      {
+         [[FBSession activeSession]
+          requestNewPublishPermissions:permissionsArray
+                       defaultAudience:FBSessionDefaultAudienceFriends
+                     completionHandler:Carrot_FacebookSDKReauthorizeHandler];
+      }
+      else
+      {
+         [[FBSession activeSession]
+          reauthorizeWithPublishPermissions:permissionsArray
+                            defaultAudience:FBSessionDefaultAudienceFriends
+                          completionHandler:Carrot_FacebookSDKReauthorizeHandler];
+      }
    }
    else if([FBSession respondsToSelector:@selector(openActiveSessionWithPermissions:allowLoginUI:completionHandler:)])
    {
+      // Legacy FacebookSDK support
       ret = 1;
       sCarrotDidFacebookSDKAuth = YES;
       [FBSession openActiveSessionWithPermissions:@[@"publish_actions"]
