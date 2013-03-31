@@ -19,6 +19,19 @@
 
 static BOOL sCarrotDidFacebookSDKAuth = NO;
 
+NSString* Carrot_GetAccessTokenFromSession(FBSession* session)
+{
+   // 3.2.1
+   if([FBSession instancesRespondToSelector:@selector(accessTokenData)])
+   {
+      return [[session accessTokenData] accessToken];
+   }
+   else // older versions
+   {
+      return [session accessToken];
+   }
+}
+
 void Carrot_GetFBAppId(NSMutableString* outString)
 {
    [outString setString:[FBSession defaultAppID]];
@@ -40,7 +53,7 @@ void Carrot_HandleApplicationDidBecomeActive()
    // If session is available, resume it
    if([FBSession openActiveSessionWithAllowLoginUI:NO])
    {
-      [[Carrot sharedInstance] setAccessToken:[[FBSession activeSession] accessToken]];
+      [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession([FBSession activeSession])];
    }
 }
 
@@ -48,7 +61,7 @@ static void (^Carrot_FacebookSDKCompletionHandler)(FBSession*, FBSessionState, N
 {
    if(session && [session isOpen])
    {
-      [[Carrot sharedInstance] setAccessToken:[session accessToken]];
+      [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession(session)];
    }
    else
    {
@@ -60,7 +73,7 @@ static void (^Carrot_FacebookSDKReauthorizeHandler)(FBSession*, NSError*) = ^(FB
 {
    if(session && [session isOpen])
    {
-      [[Carrot sharedInstance] setAccessToken:[session accessToken]];
+      [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession(session)];
    }
    else
    {
