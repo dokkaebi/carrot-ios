@@ -51,9 +51,20 @@ void Carrot_HandleApplicationDidBecomeActive()
    [[FBSession activeSession] handleDidBecomeActive];
 
    // If session is available, resume it
-   if([FBSession openActiveSessionWithAllowLoginUI:NO])
+   if([FBSession instancesRespondToSelector:@selector(openActiveSessionWithAllowLoginUI:)])
    {
-      [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession([FBSession activeSession])];
+      // Legacy Facebook SDK support
+      if([[FBSession activeSession] openActiveSessionWithAllowLoginUI:NO])
+      {
+         [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession([FBSession activeSession])];
+      }
+   }
+   else
+   {
+      if([FBSession openActiveSessionWithAllowLoginUI:NO])
+      {
+         [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession([FBSession activeSession])];
+      }
    }
 }
 
