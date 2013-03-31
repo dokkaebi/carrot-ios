@@ -38,7 +38,7 @@ void Carrot_HandleApplicationDidBecomeActive()
    [[FBSession activeSession] handleDidBecomeActive];
 
    // If session is available, resume it
-   if([[FBSession activeSession] openActiveSessionWithAllowLoginUI:NO])
+   if([FBSession openActiveSessionWithAllowLoginUI:NO])
    {
       [[Carrot sharedInstance] setAccessToken:[[FBSession activeSession] accessToken]];
    }
