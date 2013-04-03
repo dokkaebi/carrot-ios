@@ -94,8 +94,6 @@ static void (^Carrot_FacebookSDKReauthorizeHandler)(FBSession*, NSError*) = ^(FB
 
 int Carrot_DoFacebookAuth(int allowLoginUI, int permission)
 {
-   int ret = 0;
-
    NSArray* permissionsArray = nil;
    switch(permission)
    {
@@ -107,9 +105,13 @@ int Carrot_DoFacebookAuth(int allowLoginUI, int permission)
          break;
       }
       case CarrotFacebookPermissionPublishActions:
-      case CarrotFacebookPermissionReadWrite:
       {
          permissionsArray = @[@"publish_actions"];
+         break;
+      }
+      case CarrotFacebookPermissionReadWrite:
+      {
+         permissionsArray = @[@"email", @"publish_actions"];
          break;
       }
 
@@ -124,17 +126,43 @@ int Carrot_DoFacebookAuth(int allowLoginUI, int permission)
       }
    }
 
-   if(permission == CarrotFacebookPermissionRead &&
+   return Carrot_DoFacebookAuthWithPermissions(allowLoginUI, (CFArrayRef)permissionsArray);
+}
+
+int Carrot_DoFacebookAuthWithPermissions(int allowLoginUI, CFArrayRef permissions)
+{
+   int ret = 0;
+   int permissionType = CarrotFacebookPermissionRead;
+
+   NSArray* permissionsArray = (NSArray*)permissions;
+   NSSet* publishPermissions = [NSSet setWithArray:@[@"publish_stream", @"publish_actions", @"publish_checkins", @"create_event"]];
+
+   // Determine if this contains read, write, or both types of permissions
+   if([publishPermissions intersectsSet:[NSSet setWithArray:permissionsArray]])
+   {
+      permissionType = CarrotFacebookPermissionPublishActions;
+      for(id permission in permissionsArray)
+      {
+         if(![publishPermissions containsObject:permission])
+         {
+            permissionType = CarrotFacebookPermissionReadWrite;
+            break;
+         }
+      }
+   }
+
+   if(permissionType == CarrotFacebookPermissionRead &&
       [FBSession respondsToSelector:@selector(openActiveSessionWithReadPermissions:allowLoginUI:completionHandler:)])
    {
       ret = 1;
       sCarrotDidFacebookSDKAuth = YES;
+      NSLog(@"Opening Facebook session with read permissions: %@", permissionsArray);
 
       [FBSession openActiveSessionWithReadPermissions:permissionsArray
                                          allowLoginUI:allowLoginUI
                                     completionHandler:Carrot_FacebookSDKCompletionHandler];
    }
-   else if(permission == CarrotFacebookPermissionPublishActions &&
+   else if(permissionType == CarrotFacebookPermissionPublishActions &&
            [[FBSession activeSession] isOpen] &&
            [FBSession instancesRespondToSelector:@selector(reauthorizeWithPublishPermissions:defaultAudience:completionHandler:)])
    {
@@ -144,6 +172,7 @@ int Carrot_DoFacebookAuth(int allowLoginUI, int permission)
       // 3.2.1 method
       if([FBSession instancesRespondToSelector:@selector(requestNewPublishPermissions:defaultAudience:completionHandler:)])
       {
+         NSLog(@"Requesting new Facebook publish permissions: %@", permissionsArray);
          [[FBSession activeSession]
           requestNewPublishPermissions:permissionsArray
                        defaultAudience:FBSessionDefaultAudienceFriends
@@ -151,6 +180,7 @@ int Carrot_DoFacebookAuth(int allowLoginUI, int permission)
       }
       else
       {
+         NSLog(@"Reauthorizing Facebook session with publish permissions: %@", permissionsArray);
          [[FBSession activeSession]
           reauthorizeWithPublishPermissions:permissionsArray
                             defaultAudience:FBSessionDefaultAudienceFriends
@@ -160,9 +190,10 @@ int Carrot_DoFacebookAuth(int allowLoginUI, int permission)
    else if([FBSession respondsToSelector:@selector(openActiveSessionWithPermissions:allowLoginUI:completionHandler:)])
    {
       // Legacy FacebookSDK support
+      NSLog(@"Opening Facebook session with permissions (Legacy): %@", permissionsArray);
       ret = 1;
       sCarrotDidFacebookSDKAuth = YES;
-      [FBSession openActiveSessionWithPermissions:@[@"publish_actions"]
+      [FBSession openActiveSessionWithPermissions:permissionsArray
                                      allowLoginUI:allowLoginUI
                                 completionHandler:Carrot_FacebookSDKCompletionHandler];
    }

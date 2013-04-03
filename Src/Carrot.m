@@ -100,6 +100,12 @@ static NSString* sCarrotDebugUDID = nil;
    return Carrot_DoFacebookAuth(allowLoginUI, permission);
 }
 
++ (BOOL)performFacebookAuthAllowingUI:(BOOL)allowLoginUI
+                   forPermissionArray:(NSArray*)permissionArray
+{
+   return Carrot_DoFacebookAuthWithPermissions(allowLoginUI, (__bridge CFArrayRef)permissionArray);
+}
+
 + (NSString*)debugUDID
 {
    return sCarrotDebugUDID;

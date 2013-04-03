@@ -232,6 +232,24 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
                         forPermission:(CarrotFacebookPermissionType)permission;
 
 /**
+ * Perform Facebook Authentication required for Carrot.
+ *
+ * This will use the FacebookSDK.framework methods to perform the authentication needed for Carrot.
+ *
+ * @note If you are performing your own Facebook authentication, you do not need to use this
+ *       method, however you must request the 'publish_actions' permission in order for Carrot
+ *       to properly post Open Graph actions, and you must assign the OAuth access token using
+ *       setAccessToken:.
+ *
+ * @param allowLoginUI    Controls if the Facebook Application/Browser should be allowed to pop up the login UI.
+ * @param permissionArray The permission type to request. FB/iOS standards suggest that you should first ask only for read permissions, and then ask for write permissions at the time when they are needed. A list of allowable permissions is available at https://developers.facebook.com/docs/reference/login
+ *
+ * @returns NO if there are not any registered Facebook accounts on the device (iOS 6 only); YES otherwise.
+ */
++ (BOOL)performFacebookAuthAllowingUI:(BOOL)allowLoginUI
+                   forPermissionArray:(NSArray*)permissionArray;
+
+/**
  * Handle an openURL message from an external application.
  *
  * This method should be called during your UIApplicationDelegate's
@@ -510,6 +528,7 @@ extern int Carrot_PostCreateAction(const char* actionId, const char* actionPrope
  * @returns 0 if there are not any registered Facebook accounts on the device (iOS 6 only); 1 otherwise.
  */
 extern int Carrot_DoFacebookAuth(int allowLoginUI, int permission);
+extern int Carrot_DoFacebookAuthWithPermissions(int allowLoginUI, CFArrayRef permissions);
 
 /**
  * Assign a delegate which calls the provided function pointers.
