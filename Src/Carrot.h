@@ -163,9 +163,9 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
 @property (weak, nonatomic, setter=setDelegate:) NSObject <CarrotDelegate>* delegate;
 
 /**
- * The Facebook Id of the current user, or nil.
+ * The Facebook info of the current user, or nil.
  */
-@property (strong, nonatomic, readonly) NSString* facebookId;
+@property (strong, nonatomic, readonly) NSDictionary* facebookUser;
 
 /**
  * Carrot singleton.

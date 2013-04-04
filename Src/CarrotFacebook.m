@@ -77,7 +77,10 @@ static void (^Carrot_FacebookSDKCompletionHandler)(FBSession*, FBSessionState, N
        startForMeWithCompletionHandler:^(FBRequestConnection* connection,
                                          id<FBGraphUser> user,
                                          NSError* error) {
-          [Carrot sharedInstance].facebookId = user.id;
+          if(error == nil && [user isKindOfClass:[NSDictionary class]])
+          {
+             [Carrot sharedInstance].facebookUser = [NSDictionary dictionaryWithDictionary:(NSDictionary*)user];
+          }
           [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession(session)];
        }];
    }
