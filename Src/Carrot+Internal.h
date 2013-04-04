@@ -24,7 +24,7 @@
 @property (strong, nonatomic) NSString* udid;
 @property (strong, nonatomic) NSString* appSecret;
 @property (strong, nonatomic) NSString* urlSchemeSuffix;
-
+@property (strong, nonatomic, readwrite) NSString* facebookId;
 @property (strong, nonatomic) NSString* accessToken;
 
 - (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus withError:(NSError*)error;
