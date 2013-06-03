@@ -168,6 +168,11 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
 @property (strong, nonatomic, readonly) NSDictionary* facebookUser;
 
 /**
+ * The Facebook user access token of the current user, or nil.
+ */
+@property (strong, nonatomic, readonly) NSString* accessToken;
+
+/**
  * Carrot singleton.
  *
  * Carrot will retrieve your Facebook application id in the same way that the Facebook SDK
