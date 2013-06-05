@@ -337,7 +337,7 @@ NSString* URLEscapedString(NSString* inString)
                                                                 error:&error];
 
                // Handle response
-               if(error)
+               if(error && error.code != NSURLErrorUserCancelledAuthentication)
                {
                   NSLog(@"Error submitting Carrot request: %@", error);
                }

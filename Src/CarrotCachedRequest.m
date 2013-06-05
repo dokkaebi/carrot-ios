@@ -236,7 +236,8 @@
 {
    NSError* error = nil;
    NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-   if(response.statusCode == 404)
+   int httpCode = response != nil ? response.statusCode : 401;
+   if(httpCode == 404)
    {
       NSLog(@"Carrot resource not found, removing request from cache.");
       @synchronized(requestThread.requestQueue)
@@ -244,7 +245,7 @@
          [self removeFromCache:requestThread.sqliteDb];
       }
    }
-   else if([[Carrot sharedInstance] updateAuthenticationStatus:response.statusCode])
+   else if([[Carrot sharedInstance] updateAuthenticationStatus:httpCode])
    {
       if([Carrot sharedInstance].authenticationStatus == CarrotAuthenticationStatusReady)
       {
