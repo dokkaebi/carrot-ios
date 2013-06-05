@@ -387,17 +387,35 @@ static NSString* sCarrotDebugUDID = nil;
                                       queue:[NSOperationQueue mainQueue]
                           completionHandler:^(NSURLResponse* response, NSData* data, NSError* error)
     {
+       NSHTTPURLResponse* httpResponse = response ? (NSHTTPURLResponse*)response : nil;
+       int httpCode = httpResponse.statusCode;
+
        if(error)
        {
-          NSLog(@"Unknown error adding Carrot user: %@", error);
-          [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
-       }
-       else
-       {
-          NSHTTPURLResponse* httpResponse = (NSHTTPURLResponse*)response;
-          NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-          if(error || ![self updateAuthenticationStatus:httpResponse.statusCode])
+          switch(error.code)
           {
+             // 401
+             case NSURLErrorUserCancelledAuthentication:
+                error = nil;
+                httpCode = 401;
+                break;
+
+             default:
+                NSLog(@"Unknown error adding Carrot user: %@", error);
+                [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
+          }
+       }
+
+       if(error == nil)
+       {
+          if(httpCode == 404 || httpCode == 403)
+          {
+             // No such user || User has deauthorized game
+             [self setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized];
+          }
+          else if(error || ![self updateAuthenticationStatus:httpCode])
+          {
+             NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
              NSLog(@"Unknown error adding Carrot user (%d): %@", httpResponse.statusCode,
                    error ? error : jsonReply);
              [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
