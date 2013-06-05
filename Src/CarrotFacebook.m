@@ -72,6 +72,8 @@ static void (^Carrot_FacebookSDKCompletionHandler)(FBSession*, FBSessionState, N
 {
    if(session && [session isOpen])
    {
+      [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession(session)];
+
       // Fetch user id for convenience of developers
       [FBRequestConnection
        startForMeWithCompletionHandler:^(FBRequestConnection* connection,
@@ -81,7 +83,6 @@ static void (^Carrot_FacebookSDKCompletionHandler)(FBSession*, FBSessionState, N
           {
              [Carrot sharedInstance].facebookUser = [NSDictionary dictionaryWithDictionary:(NSDictionary*)user];
           }
-          [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession(session)];
        }];
    }
    else
