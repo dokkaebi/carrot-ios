@@ -365,11 +365,13 @@ static NSString* sCarrotDebugUDID = nil;
 
 - (void)validateUser
 {
-   if(!self.accessToken)
-   {
-      [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined];
-      return;
-   }
+   if(!self.accessToken) return;
+
+   static dispatch_semaphore_t validateSema;
+   static dispatch_once_t onceToken;
+   dispatch_once(&onceToken, ^{
+      validateSema = dispatch_semaphore_create(1);
+   });
 
    NSString* urlString = [NSString stringWithFormat:@"https://%@/games/%@/users.json", self.hostname, self.appId];
    NSMutableURLRequest* urlRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlString]];
@@ -383,45 +385,51 @@ static NSString* sCarrotDebugUDID = nil;
      forHTTPHeaderField:@"Content-Length"];
    [urlRequest setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
 
-   [NSURLConnection sendAsynchronousRequest:urlRequest
-                                      queue:[NSOperationQueue mainQueue]
-                          completionHandler:^(NSURLResponse* response, NSData* data, NSError* error)
-    {
-       NSHTTPURLResponse* httpResponse = response ? (NSHTTPURLResponse*)response : nil;
-       int httpCode = httpResponse.statusCode;
+   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      dispatch_semaphore_wait(validateSema, DISPATCH_TIME_FOREVER);
 
-       if(error)
+      [NSURLConnection sendAsynchronousRequest:urlRequest
+                                         queue:[NSOperationQueue mainQueue]
+                             completionHandler:^(NSURLResponse* response, NSData* data, NSError* error)
        {
-          switch(error.code)
-          {
-             // 401
-             case NSURLErrorUserCancelledAuthentication:
-                error = nil;
-                httpCode = 401;
-                break;
+          NSHTTPURLResponse* httpResponse = response ? (NSHTTPURLResponse*)response : nil;
+          int httpCode = httpResponse.statusCode;
 
-             default:
-                NSLog(@"Unknown error adding Carrot user: %@", error);
+          if(error)
+          {
+             switch(error.code)
+             {
+                // 401
+                case NSURLErrorUserCancelledAuthentication:
+                   error = nil;
+                   httpCode = 401;
+                   break;
+
+                default:
+                   NSLog(@"Unknown error adding Carrot user: %@", error);
+                   [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
+             }
+          }
+
+          if(error == nil)
+          {
+             if(httpCode == 404 || httpCode == 403)
+             {
+                // No such user || User has deauthorized game
+                [self setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized];
+             }
+             else if(error || ![self updateAuthenticationStatus:httpCode])
+             {
+                NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+                NSLog(@"Unknown error adding Carrot user (%d): %@", httpResponse.statusCode,
+                      error ? error : jsonReply);
                 [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
+             }
           }
-       }
 
-       if(error == nil)
-       {
-          if(httpCode == 404 || httpCode == 403)
-          {
-             // No such user || User has deauthorized game
-             [self setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized];
-          }
-          else if(error || ![self updateAuthenticationStatus:httpCode])
-          {
-             NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-             NSLog(@"Unknown error adding Carrot user (%d): %@", httpResponse.statusCode,
-                   error ? error : jsonReply);
-             [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
-          }
-       }
-    }];
+          dispatch_semaphore_signal(validateSema);
+       }];
+   });
 }
 
 - (void)setDevicePushToken:(NSData*)deviceToken
