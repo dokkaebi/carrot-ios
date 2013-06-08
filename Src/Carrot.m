@@ -148,6 +148,7 @@ static NSString* sCarrotDebugUDID = nil;
       self.appSecret = appSecret;
       self.udid = (debugUDIDOrNil == nil ? [CarrotOpenUDID value] : debugUDIDOrNil);
       self.urlSchemeSuffix = urlSchemeSuffix;
+      self.hostUrlScheme = kCarrotDefaultHostUrlScheme;
 
       // Get data path
       NSArray* searchPaths = [[NSFileManager defaultManager] URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask];
@@ -373,7 +374,7 @@ static NSString* sCarrotDebugUDID = nil;
       validateSema = dispatch_semaphore_create(1);
    });
 
-   NSString* urlString = [NSString stringWithFormat:@"https://%@/games/%@/users.json", self.hostname, self.appId];
+   NSString* urlString = [NSString stringWithFormat:@"%@://%@/games/%@/users.json", self.hostUrlScheme, self.hostname, self.appId];
    NSMutableURLRequest* urlRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlString]];
 
    NSString* postBody = [NSString stringWithFormat:@"api_key=%@&access_token=%@", self.udid, self.accessToken];

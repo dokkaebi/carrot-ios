@@ -213,6 +213,11 @@ NSString* URLEscapedString(NSString* inString)
    NSMutableDictionary* queryParamDict = [NSMutableDictionary dictionaryWithDictionary:request.payload];
    [queryParamDict addEntriesFromDictionary:commonQueryDict];
 
+   if(request.method != CarrotRequestTypePOST)
+   {
+      [queryParamDict addEntriesFromDictionary:@{@"_method" : request.method}];
+   }
+
    // Build query string to sign
    NSArray* queryKeysSorted = [[queryParamDict allKeys]
                                sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
@@ -242,7 +247,7 @@ NSString* URLEscapedString(NSString* inString)
        (i + 1 < queryKeysSorted.count ? "&" : "")];
    }
 
-   NSString* stringToSign = [NSString stringWithFormat:@"%@\n%@\n%@\n%@", request.method, host, path,
+   NSString* stringToSign = [NSString stringWithFormat:@"%@\n%@\n%@\n%@", @"POST", host, path,
                              sortedQueryString];
 
    NSData* dataToSign = [stringToSign dataUsingEncoding:NSUTF8StringEncoding];
@@ -303,48 +308,7 @@ NSString* URLEscapedString(NSString* inString)
 
             if(request)
             {
-               NSString* postBody = [self signedPostBody:request];
-
-               NSMutableURLRequest* preppedRequest = nil;
-               if(request.method == CarrotRequestTypePOST)
-               {
-                  NSData* postData = [postBody dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
-                  preppedRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@%@", self.carrot.hostname, request.endpoint]]];
-
-                  [preppedRequest setHTTPBody:postData];
-                  [preppedRequest setValue:[NSString stringWithFormat:@"%d", [postData length]]
-                        forHTTPHeaderField:@"Content-Length"];
-                  [preppedRequest setValue:@"application/x-www-form-urlencoded"
-                        forHTTPHeaderField:@"Content-Type"];
-               }
-               else
-               {
-                  preppedRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@%@?%@", self.carrot.hostname, request.endpoint, postBody]]];
-               }
-               [preppedRequest setHTTPMethod:request.method];
-
-               // Allocate response
-               NSHTTPURLResponse* response = [[NSHTTPURLResponse alloc]
-                                               initWithURL:preppedRequest.URL
-                                                  MIMEType:@"application/x-www-form-urlencoded"
-                                     expectedContentLength:-1
-                                          textEncodingName:nil];
-               NSError* error = nil;
-
-               // Issue request
-               NSData* data = [NSURLConnection sendSynchronousRequest:preppedRequest
-                                                    returningResponse:&response
-                                                                error:&error];
-
-               // Handle response
-               if(error && error.code != NSURLErrorUserCancelledAuthentication)
-               {
-                  NSLog(@"Error submitting Carrot request: %@", error);
-               }
-               else if(request.callback)
-               {
-                  request.callback(response, data, self);
-               }
+               [self processRequest:request];
 
                @synchronized(self.requestQueue)
                {
@@ -368,6 +332,47 @@ NSString* URLEscapedString(NSString* inString)
       }
    }
    _isRunning = NO;
+}
+
+- (void)processRequest:(CarrotRequest*)request
+{
+   NSString* postBody = [self signedPostBody:request];
+
+   NSMutableURLRequest* preppedRequest = nil;
+
+   NSData* postData = [postBody dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
+   preppedRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@://%@%@", self.carrot.hostUrlScheme, self.carrot.hostname, request.endpoint]]];
+
+   [preppedRequest setHTTPBody:postData];
+   [preppedRequest setValue:[NSString stringWithFormat:@"%d", [postData length]]
+         forHTTPHeaderField:@"Content-Length"];
+   [preppedRequest setValue:@"application/x-www-form-urlencoded"
+         forHTTPHeaderField:@"Content-Type"];
+
+   [preppedRequest setHTTPMethod:@"POST"];
+
+   // Allocate response
+   NSHTTPURLResponse* response = [[NSHTTPURLResponse alloc]
+                                  initWithURL:preppedRequest.URL
+                                  MIMEType:@"application/x-www-form-urlencoded"
+                                  expectedContentLength:-1
+                                  textEncodingName:nil];
+   NSError* error = nil;
+
+   // Issue request
+   NSData* data = [NSURLConnection sendSynchronousRequest:preppedRequest
+                                        returningResponse:&response
+                                                    error:&error];
+
+   // Handle response
+   if(error && error.code != NSURLErrorUserCancelledAuthentication)
+   {
+      NSLog(@"Error submitting Carrot request: %@", error);
+   }
+   else if(request.callback)
+   {
+      request.callback(response, data, self);
+   }
 }
 
 @end

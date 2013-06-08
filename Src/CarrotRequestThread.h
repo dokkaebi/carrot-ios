@@ -32,5 +32,6 @@
 - (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront;
 - (void)start;
 - (void)stop;
+- (void)processRequest:(CarrotRequest*)request;
 
 @end
