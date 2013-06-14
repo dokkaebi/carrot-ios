@@ -50,21 +50,39 @@ void Carrot_HandleApplicationDidBecomeActive()
 {
    [[FBSession activeSession] handleDidBecomeActive];
 
-   // If session is available, resume it
-   if([FBSession instancesRespondToSelector:@selector(openActiveSessionWithAllowLoginUI:)])
+   switch([[FBSession activeSession] state])
    {
-      // Legacy Facebook SDK support
-      if([[FBSession activeSession] openActiveSessionWithAllowLoginUI:NO])
+      // Attempt to resume session.
+      case FBSessionStateCreatedTokenLoaded:
+      {
+         if([FBSession instancesRespondToSelector:@selector(openActiveSessionWithAllowLoginUI:)])
+         {
+            // Legacy Facebook SDK support
+            if([[FBSession activeSession] openActiveSessionWithAllowLoginUI:NO])
+            {
+               [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession([FBSession activeSession])];
+            }
+         }
+         else
+         {
+            if([FBSession openActiveSessionWithAllowLoginUI:NO])
+            {
+               [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession([FBSession activeSession])];
+            }
+         }
+      }
+      break;
+
+      // Session already open.
+      case FBSessionStateOpenTokenExtended:
+      case FBSessionStateOpen:
       {
          [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession([FBSession activeSession])];
       }
-   }
-   else
-   {
-      if([FBSession openActiveSessionWithAllowLoginUI:NO])
-      {
-         [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession([FBSession activeSession])];
-      }
+      break;
+
+      default:
+         break;
    }
 }
 
