@@ -87,7 +87,21 @@ static void (^Carrot_FacebookSDKCompletionHandler)(FBSession*, FBSessionState, N
    }
    else
    {
-      [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
+      switch(error.code)
+      {
+         case FBErrorLoginFailedOrCancelled:
+         case FBErrorHTTPError:
+         {
+            [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized withError:error];
+         }
+         break;
+
+         default:
+         {
+            [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
+         }
+         break;
+      }
    }
 };
 
