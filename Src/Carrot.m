@@ -20,6 +20,7 @@
 #import "Reachability.h"
 
 #define kCarrotDefaultHostname @"gocarrot.com"
+#define kCarrotDefaultHostUrlScheme @"https"
 
 extern void Carrot_Plant(Class appDelegateClass, NSString* appSecret);
 extern void Carrot_GetFBAppId(NSMutableString* outString);
