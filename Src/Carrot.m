@@ -254,9 +254,15 @@ static NSString* sCarrotDebugUDID = nil;
    if(self.lastAuthStatusReported != _authenticationStatus &&
       [[Carrot sharedInstance].delegate respondsToSelector:@selector(authenticationStatusChanged:withError:)])
    {
-      self.lastAuthStatusReported = _authenticationStatus;
-      [[Carrot sharedInstance].delegate authenticationStatusChanged:_authenticationStatus
-                                                          withError:error];
+      // Delay the delegate notification just in case someone attempts to chain
+      // Facebook SDK auth calls based off the delegate methods.
+      dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, 0.01f * NSEC_PER_SEC);
+      dispatch_after(popTime, dispatch_get_main_queue(), ^(void)
+      {
+         self.lastAuthStatusReported = _authenticationStatus;
+         [[Carrot sharedInstance].delegate authenticationStatusChanged:_authenticationStatus
+                                                             withError:error];
+      });
    }
 }
 
