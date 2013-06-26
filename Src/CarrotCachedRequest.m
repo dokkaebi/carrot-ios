@@ -286,7 +286,7 @@ static BOOL carrotcache_commit(sqlite3* cache)
       while(sqlite3_step(sqlStatement) == SQLITE_ROW)
       {
          sqlite_uint64 cacheId = sqlite3_column_int64(sqlStatement, 0);
-         NSUInteger serviceType = sqlite3_column_int(sqlStatement, 1);
+         NSInteger serviceType = sqlite3_column_int(sqlStatement, 1);
          NSString* requestEndpoint = [NSString stringWithUTF8String:(const char*)sqlite3_column_text(sqlStatement, 2)];
          NSString* requestPayloadJSON = (sqlite3_column_text(sqlStatement, 3) == NULL ? nil : [NSString stringWithUTF8String:(const char*)sqlite3_column_text(sqlStatement, 3)]);
          NSString* requestId = [NSString stringWithUTF8String:(const char*)sqlite3_column_text(sqlStatement, 4)];

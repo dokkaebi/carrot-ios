@@ -17,8 +17,8 @@
 #include <sqlite3.h>
 
 typedef enum {
-   CarrotRequestServiceAuth    = 0,
-   CarrotRequestServiceMetrics = 1,
+   CarrotRequestServiceAuth    = -2,
+   CarrotRequestServiceMetrics = -1,
    CarrotRequestServicePost    = 2
 } CarrotRequestServiceType;
 
