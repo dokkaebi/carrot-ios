@@ -45,6 +45,7 @@ NSString* CarrotRequestTypePOST = @"POST";
    self = [super init];
    if(self)
    {
+      self.serviceType = serviceType;
       self.endpoint = endpoint;
       self.payload = payload;
       self.method = method;
