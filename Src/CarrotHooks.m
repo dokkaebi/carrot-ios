@@ -14,7 +14,6 @@
  */
 
 #import <Carrot/Carrot.h>
-#import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 
 extern void Carrot_HandleApplicationDidBecomeActive();

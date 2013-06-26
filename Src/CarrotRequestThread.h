@@ -27,9 +27,11 @@
 @property (weak, nonatomic, readonly) NSArray* requestQueue;
 
 - (id)initWithCarrot:(Carrot*)carrot;
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload;
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback;
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront;
+
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload;
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint  usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback;
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint  usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront;
+
 - (void)start;
 - (void)stop;
 - (void)processRequest:(CarrotRequest*)request;

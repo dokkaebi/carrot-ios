@@ -18,8 +18,12 @@
 #import "CarrotRequestThread.h"
 #import "CarrotCachedRequest.h"
 #import "AmazonSDKUtil.h"
+#import "Reachability.h"
 
 #include <CommonCrypto/CommonHMAC.h>
+
+#define kCarrotServicesHostname @"services.gocarrot.com"
+#define kDefaultHostUrlScheme @"https"
 
 @interface CarrotRequestThread ()
 
@@ -29,6 +33,10 @@
 @property (assign, nonatomic) Carrot* carrot;
 @property (nonatomic) BOOL keepThreadRunning;
 @property (strong, nonatomic) NSCondition* requestQueuePause;
+@property (strong, nonatomic) NSString* postHostname;
+@property (strong, nonatomic) NSString* metricsHostname;
+@property (strong, nonatomic) NSString* authHostname;
+@property (strong, nonatomic) CarrotReachability* reachability;
 
 @end
 
@@ -59,35 +67,33 @@ NSString* URLEscapedString(NSString* inString)
          return nil;
       }
 
-      // Create cache if needed
-      BOOL cacheSuccess = YES;
-      sqlite3_stmt* sqlStatement;
-      if(sqlite3_prepare_v2(self.sqliteDb, [CarrotCachedRequest cacheCreateSQLStatement],
-                            -1, &sqlStatement, NULL) == SQLITE_OK)
-      {
-         if(sqlite3_step(sqlStatement) != SQLITE_DONE)
-         {
-            NSLog(@"Failed to create Carrot cache. Error: %s'", sqlite3_errmsg(self.sqliteDb));
-            cacheSuccess = NO;
-         }
-      }
-      else
-      {
-         NSLog(@"Failed to create Carrot cache statement. Error: '%s'", sqlite3_errmsg(self.sqliteDb));
-         cacheSuccess = NO;
-      }
-      sqlite3_finalize(sqlStatement);
-
-      if(!cacheSuccess)
+      if(![CarrotCachedRequest prepareCache:self.sqliteDb])
       {
          return nil;
       }
+
+      // Start up Reachability monitor
+      self.reachability = [CarrotReachability reachabilityWithHostname:kCarrotServicesHostname];
+      self.reachability.reachableBlock = ^(CarrotReachability* reach)
+      {
+         [carrot validateUser];
+
+         // Do services discovery
+      };
+      self.reachability.unreachableBlock = ^(CarrotReachability* reach)
+      {
+         [carrot setAuthenticationStatus:CarrotAuthenticationStatusUndetermined];
+      };
+      [self.reachability startNotifier];
    }
    return self;
 }
 
 - (void)dealloc
 {
+   [self.reachability stopNotifier];
+   self.reachability = nil;
+
    self.internalRequestQueue = nil;
 
    sqlite3_close(_sqliteDb);
@@ -115,17 +121,28 @@ NSString* URLEscapedString(NSString* inString)
    }
 }
 
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload
+- (NSString*)hostForServiceType:(CarrotRequestServiceType)serviceType
 {
-   return [self addRequestForEndpoint:endpoint usingMethod:method withPayload:payload callback:nil atFront:NO];
+   switch(serviceType)
+   {
+      case CarrotRequestServiceAuth:    return self.authHostname;
+      case CarrotRequestServiceMetrics: return self.metricsHostname;
+      case CarrotRequestServicePost:    return self.postHostname;
+   }
 }
 
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback
+
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload
 {
-      return [self addRequestForEndpoint:endpoint usingMethod:method withPayload:payload callback:callback atFront:NO];
+   return [self addRequestForService:serviceType atEndpoint:endpoint usingMethod:method withPayload:payload callback:nil atFront:NO];
 }
 
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint  usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback
+{
+   return [self addRequestForService:serviceType atEndpoint:endpoint usingMethod:method withPayload:payload callback:callback atFront:NO];
+}
+
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint  usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront
 {
    BOOL ret = YES;
    if(method == CarrotRequestTypeGET)
@@ -133,20 +150,18 @@ NSString* URLEscapedString(NSString* inString)
       dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
          @synchronized(self.internalRequestQueue)
          {
+            CarrotRequest* request = [CarrotRequest requestForService:serviceType
+                                                           atEndpoint:endpoint
+                                                          usingMethod:method
+                                                          withPayload:payload
+                                                             callback:callback];
             if(atFront)
             {
-               [self.internalRequestQueue insertObject:[CarrotRequest requestForEndpoint:endpoint
-                                                                          usingMethod:method
-                                                                          withPayload:payload
-                                                                             callback:callback]
-                                               atIndex:0];
+               [self.internalRequestQueue insertObject:request atIndex:0];
             }
             else
             {
-               [self.internalRequestQueue addObject:[CarrotRequest requestForEndpoint:endpoint
-                                                                          usingMethod:method
-                                                                          withPayload:payload
-                                                                             callback:callback]];
+               [self.internalRequestQueue addObject:request];
             }
          }
       });
@@ -154,10 +169,11 @@ NSString* URLEscapedString(NSString* inString)
    else
    {
       CarrotCachedRequest* cachedRequest =
-      [CarrotCachedRequest requestForEndpoint:endpoint
-                                  withPayload:payload
-                                      inCache:self.sqliteDb
-                        synchronizingOnObject:self.requestQueue];
+      [CarrotCachedRequest requestForService:serviceType
+                                  atEndpoint:endpoint
+                                 withPayload:payload
+                                     inCache:self.sqliteDb
+                       synchronizingOnObject:self.requestQueue];
 
       if(cachedRequest)
       {
@@ -198,65 +214,75 @@ NSString* URLEscapedString(NSString* inString)
    return ret;
 }
 
-- (NSString*)signedPostBody:(CarrotRequest*)request
+- (NSString*)signedPostBody:(CarrotRequest*)request forHost:(NSString*)host
 {
-   NSString* host = self.carrot.hostname;
    NSString* path = request.endpoint;
    if(path == nil || path.length < 1) path = @"/";
 
    // Build query dict
    NSDictionary* commonQueryDict = @{
       @"api_key" : self.carrot.udid,
-      @"game_id" : self.carrot.appId
+      @"game_id" : self.carrot.appId,
+      @"version" : self.carrot.appVersion,
+      @"build" : self.carrot.appBuild
    };
 
    NSMutableDictionary* queryParamDict = [NSMutableDictionary dictionaryWithDictionary:request.payload];
-   [queryParamDict addEntriesFromDictionary:commonQueryDict];
 
    if(request.method != CarrotRequestTypePOST)
    {
       [queryParamDict addEntriesFromDictionary:@{@"_method" : request.method}];
    }
 
-   // Build query string to sign
    NSArray* queryKeysSorted = [[queryParamDict allKeys]
                                sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
-   NSMutableString* sortedQueryString = [[NSMutableString alloc] init];
-   for(int i = 0; i < queryKeysSorted.count; i++)
+   NSMutableString* sortedQueryString = nil;
+
+   if(request.serviceType != CarrotRequestServiceAuth)
    {
-      NSString* key = [queryKeysSorted objectAtIndex:i];
-      id value = [queryParamDict objectForKey:key];
-      NSString* valueString = value;
-      if([value isKindOfClass:[NSDictionary class]] ||
-         [value isKindOfClass:[NSArray class]])
+      [queryParamDict addEntriesFromDictionary:commonQueryDict];
+      sortedQueryString = [[NSMutableString alloc] init];
+      for(int i = 0; i < queryKeysSorted.count; i++)
       {
-         NSError* error = nil;
+         NSString* key = [queryKeysSorted objectAtIndex:i];
+         id value = [queryParamDict objectForKey:key];
+         NSString* valueString = value;
+         if([value isKindOfClass:[NSDictionary class]] ||
+            [value isKindOfClass:[NSArray class]])
+         {
+            NSError* error = nil;
 
-         NSData* jsonData = [NSJSONSerialization dataWithJSONObject:value options:0 error:&error];
-         if(error)
-         {
-            NSLog(@"Error converting %@ to JSON: %@", value, error);
-            valueString = [value description];
+            NSData* jsonData = [NSJSONSerialization dataWithJSONObject:value options:0 error:&error];
+            if(error)
+            {
+               NSLog(@"Error converting %@ to JSON: %@", value, error);
+               valueString = [value description];
+            }
+            else
+            {
+               valueString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            }
          }
-         else
-         {
-            valueString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-         }
+         [sortedQueryString appendFormat:@"%@=%@%s", key, valueString,
+          (i + 1 < queryKeysSorted.count ? "&" : "")];
       }
-      [sortedQueryString appendFormat:@"%@=%@%s", key, valueString,
-       (i + 1 < queryKeysSorted.count ? "&" : "")];
+
+      NSString* stringToSign = [NSString stringWithFormat:@"%@\n%@\n%@\n%@", @"POST", host, path,
+                                sortedQueryString];
+
+      NSData* dataToSign = [stringToSign dataUsingEncoding:NSUTF8StringEncoding];
+      uint8_t digestBytes[CC_SHA256_DIGEST_LENGTH];
+      CCHmac(kCCHmacAlgSHA256, [self.carrot.appSecret UTF8String], self.carrot.appSecret.length,
+             [dataToSign bytes], [dataToSign length], &digestBytes);
+
+      NSData* digestData = [NSData dataWithBytes:digestBytes length:CC_SHA256_DIGEST_LENGTH];
+      NSString* sigString = URLEscapedString([NSDataWithBase64 base64EncodedStringFromData:digestData]);
+
+      [queryParamDict setObject:sigString forKey:@"sig"];
+      NSMutableArray* newQueryKeys = [NSMutableArray arrayWithArray:queryKeysSorted];
+      [newQueryKeys addObject:@"sig"];
+      queryKeysSorted = newQueryKeys;
    }
-
-   NSString* stringToSign = [NSString stringWithFormat:@"%@\n%@\n%@\n%@", @"POST", host, path,
-                             sortedQueryString];
-
-   NSData* dataToSign = [stringToSign dataUsingEncoding:NSUTF8StringEncoding];
-   uint8_t digestBytes[CC_SHA256_DIGEST_LENGTH];
-   CCHmac(kCCHmacAlgSHA256, [self.carrot.appSecret UTF8String], self.carrot.appSecret.length,
-          [dataToSign bytes], [dataToSign length], &digestBytes);
-
-   NSData* digestData = [NSData dataWithBytes:digestBytes length:CC_SHA256_DIGEST_LENGTH];
-   NSString* sigString = URLEscapedString([NSDataWithBase64 base64EncodedStringFromData:digestData]);
 
    // Build URL escaped query string
    sortedQueryString = [[NSMutableString alloc] init];
@@ -284,7 +310,6 @@ NSString* URLEscapedString(NSString* inString)
       [sortedQueryString appendFormat:@"%@=%@&", key,
        ([value isKindOfClass:[NSNumber class]]) ? value : URLEscapedString(valueString)];
    }
-   [sortedQueryString appendFormat:@"sig=%@", sigString];
 
    return sortedQueryString;
 }
@@ -336,12 +361,13 @@ NSString* URLEscapedString(NSString* inString)
 
 - (void)processRequest:(CarrotRequest*)request
 {
-   NSString* postBody = [self signedPostBody:request];
+   NSString* host = [self hostForServiceType:request.serviceType];
+   NSString* postBody = [self signedPostBody:request forHost:host];
 
    NSMutableURLRequest* preppedRequest = nil;
 
    NSData* postData = [postBody dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
-   preppedRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@://%@%@", self.carrot.hostUrlScheme, self.carrot.hostname, request.endpoint]]];
+   preppedRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@://%@%@", kDefaultHostUrlScheme, host, request.endpoint]]];
 
    [preppedRequest setHTTPBody:postData];
    [preppedRequest setValue:[NSString stringWithFormat:@"%d", [postData length]]

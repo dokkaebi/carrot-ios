@@ -34,6 +34,8 @@ typedef enum CarrotAuthenticationStatus {
 
 #ifdef __OBJC__
 
+#import <UIKit/UIKit.h>
+
 /**
  * Block type for the completion of Carrot requests.
  *
@@ -302,6 +304,24 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
  * @param deviceToken   Push notification device token.
  */
 - (void)setDevicePushToken:(NSData*)deviceToken;
+
+/**
+ * Tell Carrot to start tracking session length.
+ *
+ * @note You can allow Carrot to perform this for you by using plantInApplication:withSecret:
+ *
+ * @param application    UIApplication for the session which is starting.
+ */
+- (void)beginApplicationSession:(UIApplication*)application;
+
+/**
+ * Tell Carrot to stop tracking session length.
+ *
+ * @note You can allow Carrot to perform this for you by using plantInApplication:withSecret:
+ *
+ * @param application    UIApplication for the session which is ending.
+ */
+- (void)endApplicationSession:(UIApplication*)application;
 
 /**
  * Post an achievement to the Carrot service.

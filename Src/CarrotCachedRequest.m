@@ -17,9 +17,23 @@
 #import "CarrotCachedRequest.h"
 #import "CarrotRequestThread.h"
 
-#define kCacheCreateSQL "CREATE TABLE IF NOT EXISTS cache(request_endpoint TEXT, request_payload TEXT, request_id TEXT, request_date REAL, retry_count INTEGER)"
-#define kCacheReadSQL "SELECT rowid, request_endpoint, request_payload, request_id, request_date, retry_count FROM cache ORDER BY retry_count"
-#define kCacheInsertSQL "INSERT INTO cache (request_endpoint, request_payload, request_id, request_date, retry_count) VALUES (%Q, %Q, %Q, %f, %d)"
+#define kCarrotDefaultHostname @"gocarrot.com"
+#define kCarrotDefaultHostUrlScheme @"https"
+
+// Cache schema version
+#define kCacheSchemaCreateSQL "CREATE TABLE IF NOT EXISTS cache_schema(schema_version INTEGER)"
+#define kCacheSchemaReadSQL "SELECT MAX(schema_version) FROM cache_schema"
+#define kCacheSchemaInsertSQL "INSERT INTO cache_schema(schema_version) VALUES (%d)"
+
+// v0
+#define kCacheCreateV0SQL "CREATE TABLE IF NOT EXISTS cache(request_endpoint TEXT, request_payload TEXT, request_id TEXT, request_date REAL, retry_count INTEGER)"
+
+// v0->v1
+#define kCacheAlterV0toV1SQL "ALTER TABLE cache ADD COLUMN request_servicetype INTEGER"
+#define kCacheUpdateV0toV1SQL "UPDATE cache SET request_servicetype=%d"
+
+#define kCacheReadSQL "SELECT rowid, request_servicetype, request_endpoint, request_payload, request_id, request_date, retry_count FROM cache ORDER BY retry_count"
+#define kCacheInsertSQL "INSERT INTO cache (request_servicetype, request_endpoint, request_payload, request_id, request_date, retry_count) VALUES (%d, %Q, %Q, %Q, %f, %d)"
 #define kCacheUpdateSQL "UPDATE cache SET retry_count=%d WHERE rowid=%lld"
 #define kCacheDeleteSQL "DELETE FROM cache WHERE rowid=%lld"
 
@@ -33,14 +47,163 @@
 
 @end
 
-@implementation CarrotCachedRequest
-
-+ (const char*)cacheCreateSQLStatement
+static BOOL carrotcache_begin(sqlite3* cache)
 {
-   return kCacheCreateSQL;
+   if(sqlite3_exec(cache, "BEGIN TRANSACTION", 0, 0, 0) != SQLITE_OK)
+   {
+      NSLog(@"Failed to begin Carrot cache transaction. Error: %s'", sqlite3_errmsg(cache));
+      return NO;
+   }
+   return YES;
 }
 
-+ (id)requestForEndpoint:(NSString*)endpoint withPayload:(NSDictionary*)payload inCache:(sqlite3*)cache synchronizingOnObject:(id)synchObject
+static BOOL carrotcache_rollback(sqlite3* cache)
+{
+   if(sqlite3_exec(cache, "ROLLBACK", 0, 0, 0) != SQLITE_OK)
+   {
+      NSLog(@"Failed to rollback Carrot cache transaction. Error: %s'", sqlite3_errmsg(cache));
+      return NO;
+   }
+   return YES;
+}
+
+static BOOL carrotcache_commit(sqlite3* cache)
+{
+   if(sqlite3_exec(cache, "COMMIT", 0, 0, 0) != SQLITE_OK)
+   {
+      NSLog(@"Failed to commit Carrot cache transaction. Error: %s'", sqlite3_errmsg(cache));
+      return NO;
+   }
+   return YES;
+}
+
+#define CARROTCACHE_ROLLBACK_FAIL(test, cache) if(!test){ carrotcache_rollback(cache); return NO; }
+
+@implementation CarrotCachedRequest
+
++ (BOOL)prepareCache:(sqlite3*)cache
+{
+   BOOL ret = YES;
+
+   sqlite3_stmt* sqlStatement;
+
+   // Create schema version table
+   if(sqlite3_prepare_v2(cache, kCacheSchemaCreateSQL, -1, &sqlStatement, NULL) == SQLITE_OK)
+   {
+      if(sqlite3_step(sqlStatement) != SQLITE_DONE)
+      {
+         NSLog(@"Failed to create Carrot cache schema. Error: %s'", sqlite3_errmsg(cache));
+         ret = NO;
+      }
+   }
+   else
+   {
+      NSLog(@"Failed to create Carrot cache schema statement. Error: '%s'", sqlite3_errmsg(cache));
+      ret = NO;
+   }
+   sqlite3_finalize(sqlStatement);
+
+   if(!ret) return ret;
+
+   // Read cache schema version
+   NSUInteger cacheSchemaVersion = 0;
+   if(sqlite3_prepare_v2(cache, kCacheSchemaReadSQL, -1, &sqlStatement, NULL) == SQLITE_OK)
+   {
+      while(sqlite3_step(sqlStatement) == SQLITE_ROW)
+      {
+         cacheSchemaVersion = sqlite3_column_int(sqlStatement, 0);
+      }
+   }
+   sqlite3_finalize(sqlStatement);
+
+   // Create v0 cache if needed
+   if(sqlite3_prepare_v2(cache, kCacheCreateV0SQL, -1, &sqlStatement, NULL) == SQLITE_OK)
+   {
+      if(sqlite3_step(sqlStatement) != SQLITE_DONE)
+      {
+         NSLog(@"Failed to create Carrot cache. Error: %s'", sqlite3_errmsg(cache));
+         ret = NO;
+      }
+   }
+   else
+   {
+      NSLog(@"Failed to create Carrot cache statement. Error: '%s'", sqlite3_errmsg(cache));
+      ret = NO;
+   }
+   sqlite3_finalize(sqlStatement);
+
+   if(!ret) return ret;
+
+   // Perform migrations
+   if(cacheSchemaVersion == 0)
+   {
+      // Begin transaction
+      if(!carrotcache_begin(cache)) return NO;
+
+      // Alter cache table
+      if(sqlite3_prepare_v2(cache, kCacheAlterV0toV1SQL, -1, &sqlStatement, NULL) == SQLITE_OK)
+      {
+         if(sqlite3_step(sqlStatement) != SQLITE_DONE)
+         {
+            NSLog(@"Failed to migrate Carrot cache. Error: %s'", sqlite3_errmsg(cache));
+            ret = NO;
+         }
+      }
+      else
+      {
+         NSLog(@"Failed to create Carrot cache migration statement. Error: '%s'", sqlite3_errmsg(cache));
+         ret = NO;
+      }
+      sqlite3_finalize(sqlStatement);
+
+      CARROTCACHE_ROLLBACK_FAIL(ret, cache);
+
+      // Update schema version
+      char* sqlString = sqlite3_mprintf(kCacheSchemaInsertSQL, 1);
+      if(sqlite3_prepare_v2(cache, sqlString, -1, &sqlStatement, NULL) == SQLITE_OK)
+      {
+         if(sqlite3_step(sqlStatement) != SQLITE_DONE)
+         {
+            NSLog(@"Failed to update Carrot cache schema version. Error: %s'", sqlite3_errmsg(cache));
+            ret = NO;
+         }
+      }
+      else
+      {
+         NSLog(@"Failed to create Carrot cache schema version update statement. Error: '%s'", sqlite3_errmsg(cache));
+         ret = NO;
+      }
+      sqlite3_finalize(sqlStatement);
+      sqlite3_free(sqlString);
+
+      CARROTCACHE_ROLLBACK_FAIL(ret, cache);
+
+      // Update cache contents to v1 (all cached requests prior to v1 were CarrotRequestServicePost)
+      sqlString = sqlite3_mprintf(kCacheUpdateV0toV1SQL, CarrotRequestServicePost);
+      if(sqlite3_prepare_v2(cache, sqlString, -1, &sqlStatement, NULL) == SQLITE_OK)
+      {
+         if(sqlite3_step(sqlStatement) != SQLITE_DONE)
+         {
+            NSLog(@"Failed to update Carrot cache. Error: %s'", sqlite3_errmsg(cache));
+            ret = NO;
+         }
+      }
+      else
+      {
+         NSLog(@"Failed to create Carrot cache update statement. Error: '%s'", sqlite3_errmsg(cache));
+         ret = NO;
+      }
+      sqlite3_finalize(sqlStatement);
+      sqlite3_free(sqlString);
+
+      // Commit transaction
+      CARROTCACHE_ROLLBACK_FAIL(ret && carrotcache_commit(cache), cache);
+   }
+
+   return ret;
+}
+
++ (id)requestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint withPayload:(NSDictionary*)payload inCache:(sqlite3*)cache synchronizingOnObject:(id)synchObject
 {
    sqlite_uint64 cacheId = 0;
    NSUInteger retryCount = 0;
@@ -67,7 +230,9 @@
    NSString* requestId = (__bridge NSString*)uuidString;
 
    sqlite3_stmt* sqlStatement;
-   char* sqlString = sqlite3_mprintf(kCacheInsertSQL, [endpoint UTF8String],
+   char* sqlString = sqlite3_mprintf(kCacheInsertSQL,
+                                     serviceType,
+                                     [endpoint UTF8String],
                                      [payloadJSON UTF8String],
                                      [requestId UTF8String],
                                      [dateIssued timeIntervalSince1970], retryCount);
@@ -95,12 +260,13 @@
 
    if(successful)
    {
-      ret = [[CarrotCachedRequest alloc] initWithEndpoint:endpoint
-                                                  payload:payload
-                                                requestId:requestId
-                                                  cacheId:cacheId
-                                               dateIssued:dateIssued
-                                               retryCount:retryCount];
+      ret = [[CarrotCachedRequest alloc] initForService:serviceType
+                                             atEndpoint:endpoint
+                                                payload:payload
+                                              requestId:requestId
+                                                cacheId:cacheId
+                                             dateIssued:dateIssued
+                                             retryCount:retryCount];
    }
 
    // Clean up
@@ -119,11 +285,12 @@
       while(sqlite3_step(sqlStatement) == SQLITE_ROW)
       {
          sqlite_uint64 cacheId = sqlite3_column_int64(sqlStatement, 0);
-         NSString* requestEndpoint = [NSString stringWithUTF8String:(const char*)sqlite3_column_text(sqlStatement, 1)];
-         NSString* requestPayloadJSON = (sqlite3_column_text(sqlStatement, 2) == NULL ? nil : [NSString stringWithUTF8String:(const char*)sqlite3_column_text(sqlStatement, 2)]);
-         NSString* requestId = [NSString stringWithUTF8String:(const char*)sqlite3_column_text(sqlStatement, 3)];
-         NSDate* requestDate = [NSDate dateWithTimeIntervalSince1970:sqlite3_column_double(sqlStatement, 4)];
-         NSUInteger retryCount = sqlite3_column_int(sqlStatement, 5);
+         NSUInteger serviceType = sqlite3_column_int(sqlStatement, 1);
+         NSString* requestEndpoint = [NSString stringWithUTF8String:(const char*)sqlite3_column_text(sqlStatement, 2)];
+         NSString* requestPayloadJSON = (sqlite3_column_text(sqlStatement, 3) == NULL ? nil : [NSString stringWithUTF8String:(const char*)sqlite3_column_text(sqlStatement, 3)]);
+         NSString* requestId = [NSString stringWithUTF8String:(const char*)sqlite3_column_text(sqlStatement, 4)];
+         NSDate* requestDate = [NSDate dateWithTimeIntervalSince1970:sqlite3_column_double(sqlStatement, 5)];
+         NSUInteger retryCount = sqlite3_column_int(sqlStatement, 6);
 
          NSError* error = nil;
          NSDictionary* requestPayload = [NSJSONSerialization JSONObjectWithData:[requestPayloadJSON dataUsingEncoding:NSUTF8StringEncoding] options:0 error:&error];
@@ -136,12 +303,13 @@
          else
          {
             CarrotCachedRequest* request = [[CarrotCachedRequest alloc]
-                                             initWithEndpoint:requestEndpoint
-                                                      payload:requestPayload
-                                                    requestId:requestId
-                                                      cacheId:cacheId
-                                                   dateIssued:requestDate
-                                                   retryCount:retryCount];
+                                            initForService:serviceType
+                                                atEndpoint:requestEndpoint
+                                                   payload:requestPayload
+                                                 requestId:requestId
+                                                   cacheId:cacheId
+                                                dateIssued:requestDate
+                                                retryCount:retryCount];
             [cacheArray addObject:request];
          }
       }
@@ -155,13 +323,13 @@
    return cacheArray;
 }
 
-- (id)initWithEndpoint:(NSString*)endpoint payload:(NSDictionary*)payload requestId:(NSString*)requestId cacheId:(sqlite_uint64)cacheId dateIssued:(NSDate*)dateIssued retryCount:(NSUInteger)retryCount
+- (id)initForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint payload:(NSDictionary*)payload requestId:(NSString*)requestId cacheId:(sqlite_uint64)cacheId dateIssued:(NSDate*)dateIssued retryCount:(NSUInteger)retryCount
 {
    NSMutableDictionary* finalPayload = [payload mutableCopy];
    [finalPayload setObject:requestId forKey:@"request_id"];
    [finalPayload setObject:[NSNumber numberWithLongLong:(uint64_t)[dateIssued timeIntervalSince1970]] forKey:@"request_date"];
 
-   self = [super initWithEndpoint:endpoint usingMethod:CarrotRequestTypePOST payload:finalPayload callback:^(NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread) {
+   self = [super initForService:serviceType atEndpoint:endpoint usingMethod:CarrotRequestTypePOST payload:finalPayload callback:^(NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread) {
       [self requestCallbackStatus:response data:data thread:requestThread];
    }];
 
@@ -229,7 +397,7 @@
 
 - (NSString*)description
 {
-   return [NSString stringWithFormat:@"Carrot Request: {\n\t'request_endpoint':'%@',\n\t'request_payload':'%@',\n\t'request_id':'%@',\n\t'request_date':'%@',\n\t'retry_count':'%d'\n}", self.endpoint, self.payload, self.requestId, self.dateIssued, self.retryCount];
+   return [NSString stringWithFormat:@"Carrot Request: {\n\t'request_servicetype':'%d'\n\t'request_endpoint':'%@',\n\t'request_payload':'%@',\n\t'request_id':'%@',\n\t'request_date':'%@',\n\t'retry_count':'%d'\n}", self.serviceType, self.endpoint, self.payload, self.requestId, self.dateIssued, self.retryCount];
 }
 
 - (void)requestCallbackStatus:(NSHTTPURLResponse*)response data:(NSData*)data thread:(CarrotRequestThread*)requestThread

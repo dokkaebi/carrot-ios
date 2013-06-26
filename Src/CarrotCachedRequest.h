@@ -23,10 +23,10 @@
 @property (strong, nonatomic, readonly) NSDate* dateIssued;
 @property (nonatomic, readonly) NSUInteger retryCount;
 
-+ (id)requestForEndpoint:(NSString*)endpoint withPayload:(NSDictionary*)payload inCache:(sqlite3*)cache synchronizingOnObject:(id)synchObject;
++ (id)requestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint withPayload:(NSDictionary*)payload inCache:(sqlite3*)cache synchronizingOnObject:(id)synchObject;
 
 + (NSArray*)requestsInCache:(sqlite3*)cache;
-+ (const char*)cacheCreateSQLStatement;
++ (BOOL)prepareCache:(sqlite3*)cache;
 
 - (BOOL)removeFromCache:(sqlite3*)cache;
 - (BOOL)addRetryInCache:(sqlite3*)cache;
