@@ -25,7 +25,7 @@
 
 + (id)requestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint withPayload:(NSDictionary*)payload inCache:(sqlite3*)cache synchronizingOnObject:(id)synchObject;
 
-+ (NSArray*)requestsInCache:(sqlite3*)cache;
++ (NSArray*)requestsInCache:(sqlite3*)cache forAuthStatus:(CarrotAuthenticationStatus)authStatus;
 + (BOOL)prepareCache:(sqlite3*)cache;
 
 - (BOOL)removeFromCache:(sqlite3*)cache;

@@ -18,8 +18,8 @@
 
 typedef enum {
    CarrotRequestServiceAuth    = 0,
-   CarrotRequestServicePost    = 1,
-   CarrotRequestServiceMetrics = 2
+   CarrotRequestServiceMetrics = 1,
+   CarrotRequestServicePost    = 2
 } CarrotRequestServiceType;
 
 @class CarrotRequestThread;

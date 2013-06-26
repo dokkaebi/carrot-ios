@@ -208,7 +208,7 @@ NSString* URLEscapedString(NSString* inString)
    BOOL ret = NO;
    @synchronized(self.requestQueue)
    {
-      NSArray* cachedRequests = [CarrotCachedRequest requestsInCache:self.sqliteDb];
+      NSArray* cachedRequests = [CarrotCachedRequest requestsInCache:self.sqliteDb forAuthStatus:self.carrot.authenticationStatus];
       [self.internalRequestQueue addObjectsFromArray:cachedRequests];
    }
    return ret;

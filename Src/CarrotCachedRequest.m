@@ -32,7 +32,7 @@
 #define kCacheAlterV0toV1SQL "ALTER TABLE cache ADD COLUMN request_servicetype INTEGER"
 #define kCacheUpdateV0toV1SQL "UPDATE cache SET request_servicetype=%d"
 
-#define kCacheReadSQL "SELECT rowid, request_servicetype, request_endpoint, request_payload, request_id, request_date, retry_count FROM cache ORDER BY retry_count"
+#define kCacheReadSQL "SELECT rowid, request_servicetype, request_endpoint, request_payload, request_id, request_date, retry_count FROM cache WHERE request_servicetype<=%d ORDER BY retry_count"
 #define kCacheInsertSQL "INSERT INTO cache (request_servicetype, request_endpoint, request_payload, request_id, request_date, retry_count) VALUES (%d, %Q, %Q, %Q, %f, %d)"
 #define kCacheUpdateSQL "UPDATE cache SET retry_count=%d WHERE rowid=%lld"
 #define kCacheDeleteSQL "DELETE FROM cache WHERE rowid=%lld"
@@ -275,12 +275,13 @@ static BOOL carrotcache_commit(sqlite3* cache)
    return ret;
 }
 
-+ (NSArray*)requestsInCache:(sqlite3*)cache
++ (NSArray*)requestsInCache:(sqlite3*)cache forAuthStatus:(CarrotAuthenticationStatus)authStatus
 {
    NSMutableArray* cacheArray = [[NSMutableArray alloc] init];
 
    sqlite3_stmt* sqlStatement;
-   if(sqlite3_prepare_v2(cache, kCacheReadSQL, -1, &sqlStatement, NULL) == SQLITE_OK)
+   char* sqlString = sqlite3_mprintf(kCacheReadSQL, authStatus);
+   if(sqlite3_prepare_v2(cache, sqlString, -1, &sqlStatement, NULL) == SQLITE_OK)
    {
       while(sqlite3_step(sqlStatement) == SQLITE_ROW)
       {
@@ -319,6 +320,7 @@ static BOOL carrotcache_commit(sqlite3* cache)
       NSLog(@"Failed to load Carrot request cache.");
    }
    sqlite3_finalize(sqlStatement);
+   sqlite3_free(sqlString);
 
    return cacheArray;
 }
