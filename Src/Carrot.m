@@ -225,14 +225,6 @@ static NSString* sCarrotDebugUDID = nil;
    @synchronized(self)
    {
       _authenticationStatus = authenticationStatus;
-      if(_authenticationStatus == CarrotAuthenticationStatusReady)
-      {
-         [self.requestThread start];
-      }
-      else
-      {
-         [self.requestThread stop];
-      }
    }
 
    if(self.lastAuthStatusReported != _authenticationStatus &&
@@ -423,7 +415,7 @@ static NSString* sCarrotDebugUDID = nil;
 
          dispatch_semaphore_signal(validateSema);
       }];
-      [self.requestThread processRequest:authRequest];
+      [self.requestThread addRequestInQueue:authRequest atFront:YES];
    });
 }
 

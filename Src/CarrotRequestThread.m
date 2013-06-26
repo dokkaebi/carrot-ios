@@ -73,16 +73,21 @@ NSString* URLEscapedString(NSString* inString)
       }
 
       // Start up Reachability monitor
+      __weak typeof(self) weakSelf = self;
       self.reachability = [CarrotReachability reachabilityWithHostname:kCarrotServicesHostname];
       self.reachability.reachableBlock = ^(CarrotReachability* reach)
       {
-         [carrot validateUser];
-
          // Do services discovery
+         weakSelf.postHostname = @"gocarrot.com";
+         weakSelf.authHostname = @"gocarrot.com";
+         weakSelf.metricsHostname = @"metrics.gocarrot.com";
+
+         [weakSelf start];
+         [weakSelf.carrot validateUser];
       };
       self.reachability.unreachableBlock = ^(CarrotReachability* reach)
       {
-         [carrot setAuthenticationStatus:CarrotAuthenticationStatusUndetermined];
+         [weakSelf stop];
       };
       [self.reachability startNotifier];
    }
@@ -147,24 +152,13 @@ NSString* URLEscapedString(NSString* inString)
    BOOL ret = YES;
    if(method == CarrotRequestTypeGET)
    {
-      dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-         @synchronized(self.internalRequestQueue)
-         {
-            CarrotRequest* request = [CarrotRequest requestForService:serviceType
-                                                           atEndpoint:endpoint
-                                                          usingMethod:method
-                                                          withPayload:payload
-                                                             callback:callback];
-            if(atFront)
-            {
-               [self.internalRequestQueue insertObject:request atIndex:0];
-            }
-            else
-            {
-               [self.internalRequestQueue addObject:request];
-            }
-         }
-      });
+
+      CarrotRequest* request = [CarrotRequest requestForService:serviceType
+                                                     atEndpoint:endpoint
+                                                    usingMethod:method
+                                                    withPayload:payload
+                                                       callback:callback];
+      [self addRequestInQueue:request atFront:atFront];
    }
    else
    {
@@ -177,30 +171,33 @@ NSString* URLEscapedString(NSString* inString)
 
       if(cachedRequest)
       {
-         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            @synchronized(self.requestQueue)
-            {
-               if(atFront)
-               {
-                  [self.internalRequestQueue insertObject:cachedRequest atIndex:0];
-               }
-               else
-               {
-                  [self.internalRequestQueue addObject:cachedRequest];
-               }
-            }
-         });
+         [self addRequestInQueue:cachedRequest atFront:atFront];
       }
 
       ret = (cachedRequest != nil);
    }
 
-   // Signal thread to start up if it is waiting
-   [self.requestQueuePause lock];
-   [self.requestQueuePause signal];
-   [self.requestQueuePause unlock];
-
    return ret;
+}
+
+- (void)addRequestInQueue:(CarrotRequest*)request atFront:(BOOL)atFront
+{
+   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      @synchronized(self.requestQueue)
+      {
+         if(atFront)
+         {
+            [self.internalRequestQueue insertObject:request atIndex:0];
+         }
+         else
+         {
+            [self.internalRequestQueue addObject:request];
+         }
+      }
+      [self.requestQueuePause lock];
+      [self.requestQueuePause signal];
+      [self.requestQueuePause unlock];
+   });
 }
 
 - (BOOL)loadQueueFromCache
