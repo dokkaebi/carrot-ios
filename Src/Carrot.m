@@ -252,6 +252,9 @@ static NSString* sCarrotDebugUDID = nil;
       {
          // Everything is in order, we are online
          self.authenticationStatus = CarrotAuthenticationStatusReady;
+
+         // Signal the request thread to wake up
+         [self.requestThread signal];
          break;
       }
       case 401: // Unauthorized
