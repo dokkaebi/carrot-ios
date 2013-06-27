@@ -20,6 +20,8 @@
 #import "OpenUDID.h"
 #import "Reachability.h"
 
+#define kCarrotSDKVersion @"1.1.0"
+
 extern void Carrot_Plant(Class appDelegateClass, NSString* appSecret);
 extern void Carrot_GetFBAppId(NSMutableString* outString);
 extern BOOL Carrot_HandleOpenURLFacebookSDK(NSURL* url);
@@ -31,6 +33,7 @@ extern NSString* URLEscapedString(NSString* inString);
 @property (nonatomic) CarrotAuthenticationStatus lastAuthStatusReported;
 @property (nonatomic, readwrite, setter=setAuthenticationStatus:) CarrotAuthenticationStatus authenticationStatus;
 @property (nonatomic, readwrite, setter=setAuthenticationStatusReason:) CarrotAuthenticationStatusReason authenticationStatusReason;
+@property (strong, nonatomic, readwrite) NSString* version;
 
 @end
 
@@ -172,6 +175,7 @@ static NSString* sCarrotDebugUDID = nil;
       self.appSecret = appSecret;
       self.udid = (debugUDIDOrNil == nil ? [CarrotOpenUDID value] : debugUDIDOrNil);
       self.urlSchemeSuffix = urlSchemeSuffix;
+      self.version = kCarrotSDKVersion;
 
       // Get data path
       NSArray* searchPaths = [[NSFileManager defaultManager] URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask];
