@@ -40,6 +40,18 @@ NSString* CarrotRequestTypePOST = @"POST";
                                        callback:callback];
 }
 
++ (NSDictionary*)finalPayloadForPayload:(NSDictionary*)payload
+{
+   NSDictionary* commonPayload = @{
+      @"version" : [Carrot sharedInstance].appVersion,
+      @"build" : [Carrot sharedInstance].appBuild,
+      @"tag" : [Carrot sharedInstance].appTag
+   };
+   NSMutableDictionary* finalPayload = [NSMutableDictionary dictionaryWithDictionary:commonPayload];
+   [finalPayload addEntriesFromDictionary:payload];
+   return finalPayload;
+}
+
 - (id)initForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method payload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback
 {
    self = [super init];
@@ -47,7 +59,7 @@ NSString* CarrotRequestTypePOST = @"POST";
    {
       self.serviceType = serviceType;
       self.endpoint = endpoint;
-      self.payload = payload;
+      self.payload = [CarrotRequest finalPayloadForPayload:payload];
       self.method = method;
       self.callback = callback;
    }

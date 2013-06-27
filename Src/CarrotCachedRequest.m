@@ -213,7 +213,7 @@ static BOOL carrotcache_commit(sqlite3* cache)
 
    NSError* error = nil;
    NSString* payloadJSON = nil;
-   NSData* payloadJSONData = [NSJSONSerialization dataWithJSONObject:payload options:0 error:&error];
+   NSData* payloadJSONData = [NSJSONSerialization dataWithJSONObject:[CarrotRequest finalPayloadForPayload:payload] options:0 error:&error];
    if(error)
    {
       NSLog(@"Error converting payload to JSON: %@", error);

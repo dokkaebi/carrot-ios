@@ -37,6 +37,8 @@ extern NSString* CarrotRequestTypePOST;
 @property (strong, nonatomic, readonly) NSString* method;
 @property (strong, nonatomic, readonly) CarrotRequestResponse callback;
 
++ (NSDictionary*)finalPayloadForPayload:(NSDictionary*)payload;
+
 + (id)requestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback;
 - (id)initForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method payload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback;
 

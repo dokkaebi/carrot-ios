@@ -260,9 +260,7 @@ NSString* URLEscapedString(NSString* inString)
    // Build query dict
    NSDictionary* commonQueryDict = @{
       @"api_key" : self.carrot.udid,
-      @"game_id" : self.carrot.appId,
-      @"version" : self.carrot.appVersion,
-      @"build" : self.carrot.appBuild
+      @"game_id" : self.carrot.appId
    };
 
    NSMutableDictionary* queryParamDict = [NSMutableDictionary dictionaryWithDictionary:request.payload];
