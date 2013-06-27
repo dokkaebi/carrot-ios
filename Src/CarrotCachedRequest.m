@@ -77,7 +77,7 @@ static BOOL carrotcache_commit(sqlite3* cache)
    return YES;
 }
 
-#define CARROTCACHE_ROLLBACK_FAIL(test, cache) if(!test){ carrotcache_rollback(cache); return NO; }
+#define CARROTCACHE_ROLLBACK_FAIL(test, cache) if(!(test)){ carrotcache_rollback(cache); return NO; }
 
 @implementation CarrotCachedRequest
 
