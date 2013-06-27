@@ -32,6 +32,17 @@ typedef enum CarrotAuthenticationStatus {
                                                        and Carrot can make Open Graph posts. */
 } CarrotAuthenticationStatus;
 
+typedef enum CarrotAuthenticationStatusReason {
+   CarrotAuthenticationStatusReasonUserRemovedApp = -4,
+   CarrotAuthenticationStatusReasonUserDeniedPermissions = -3,
+   CarrotAuthenticationStatusReasonSessionExpired = -2,
+   CarrotAuthenticationStatusReasonAppDisabledInSettings = -1,
+   CarrotAuthenticationStatusReasonUnknown = 0,
+   CarrotAuthenticationStatusReasonUnknownShowUser = 1,
+   CarrotAuthenticationStatusReasonSessionExists = 2,
+   CarrotAuthenticationStatusReasonNewSession = 3
+} CarrotAuthenticationStatusReason;
+
 #ifdef __OBJC__
 
 #import <UIKit/UIKit.h>
@@ -155,9 +166,14 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
 + (void)plant:(NSString*)appID inApplication:(Class)appDelegateClass urlSchemeSuffix:(NSString*)urlSchemeSuffix withSecret:(NSString*)appSecret;
 
 /**
- * The authentication status for the current user.
+ * The authentication status of the current user.
  */
 @property (nonatomic, readonly) CarrotAuthenticationStatus authenticationStatus;
+
+/**
+ * The reason for the authentication status of the current user.
+ */
+@property (nonatomic, readonly) CarrotAuthenticationStatusReason authenticationStatusReason;
 
 /**
  * CarrotDelegate which recieves action notifications.

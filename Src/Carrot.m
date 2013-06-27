@@ -29,6 +29,8 @@ extern NSString* URLEscapedString(NSString* inString);
 
 @property (strong, nonatomic) CarrotRequestThread* requestThread;
 @property (nonatomic) CarrotAuthenticationStatus lastAuthStatusReported;
+@property (nonatomic, readwrite, setter=setAuthenticationStatus:) CarrotAuthenticationStatus authenticationStatus;
+@property (nonatomic, readwrite, setter=setAuthenticationStatusReason:) CarrotAuthenticationStatusReason authenticationStatusReason;
 
 @end
 
@@ -43,6 +45,14 @@ static NSString* sCarrotDebugUDID = nil;
    static Carrot* sharedInstance = nil;
    static dispatch_once_t onceToken;
    dispatch_once(&onceToken, ^{
+      if(![NSError instancesRespondToSelector:@selector(fberrorShouldNotifyUser)])
+      {
+         NSException *exception = [NSException exceptionWithName:@"AdditionalLinkerFlagRequired"
+                                                          reason:@"Use of the Carrot SDK requires adding '-ObjC' to the 'Other Linker Flags' setting of your Xcode Project. See: https://gocarrot.com/docs/ios for more information."
+                                                        userInfo:nil];
+         @throw exception;
+      }
+
       sharedInstance = [[Carrot alloc] init];
    });
    return sharedInstance;
@@ -112,6 +122,22 @@ static NSString* sCarrotDebugUDID = nil;
 + (void)setDebugUDID:(NSString*)debugUDID
 {
    sCarrotDebugUDID = debugUDID;
+}
+
+- (void)setAuthenticationStatus:(CarrotAuthenticationStatus)status
+{
+   NSException *exception = [NSException exceptionWithName:@"DontUseThisSetter"
+                                                    reason:@"Use setAuthenticationStatus:withError:andReason: instead."
+                                                  userInfo: nil];
+   @throw exception;
+}
+
+- (void)setAuthenticationStatusReason:(CarrotAuthenticationStatusReason)reason
+{
+   NSException *exception = [NSException exceptionWithName:@"DontUseThisSetter"
+                                                    reason:@"Use setAuthenticationStatus:withError:andReason: instead."
+                                                  userInfo: nil];
+   @throw exception;
 }
 
 - (id)init
@@ -206,7 +232,7 @@ static NSString* sCarrotDebugUDID = nil;
 {
    _delegate = delegate;
    self.lastAuthStatusReported = CarrotAuthenticationStatusUndetermined;
-   [self setAuthenticationStatus:_authenticationStatus];
+   [self setAuthenticationStatus:_authenticationStatus withError:nil andReason:_authenticationStatusReason];
 }
 
 - (void)setAppSecret:(NSString*)appSecret
@@ -215,16 +241,15 @@ static NSString* sCarrotDebugUDID = nil;
 }
 
 - (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus
-{
-   [self setAuthenticationStatus:authenticationStatus withError:nil];
-}
-
-- (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus
-                      withError:(NSError*)error
+                      withError:(NSError*)error andReason:(CarrotAuthenticationStatusReason)reason;
 {
    @synchronized(self)
    {
-      _authenticationStatus = authenticationStatus;
+      if(authenticationStatus != _authenticationStatus)
+      {
+         _authenticationStatusReason = reason;
+         _authenticationStatus = authenticationStatus;
+      }
    }
 
    if(self.lastAuthStatusReported != _authenticationStatus &&
@@ -251,7 +276,9 @@ static NSString* sCarrotDebugUDID = nil;
       case 201:
       {
          // Everything is in order, we are online
-         self.authenticationStatus = CarrotAuthenticationStatusReady;
+         [self setAuthenticationStatus:CarrotAuthenticationStatusReady
+                             withError:nil
+                             andReason:CarrotAuthenticationStatusReasonSessionExists];
 
          // Signal the request thread to wake up
          [self.requestThread signal];
@@ -260,13 +287,17 @@ static NSString* sCarrotDebugUDID = nil;
       case 401: // Unauthorized
       {
          // The user has not allowed the 'publish_actions' permission.
-         self.authenticationStatus = CarrotAuthenticationStatusReadOnly;
+         [self setAuthenticationStatus:CarrotAuthenticationStatusReadOnly
+                             withError:nil
+                             andReason:CarrotAuthenticationStatusReasonUnknown];
          break;
       }
       case 405: // Method Not Allowed
       {
          // The user has not authorized the application, or deauthorized the application.
-         self.authenticationStatus = CarrotAuthenticationStatusNotAuthorized;
+         [self setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized
+                             withError:nil
+                             andReason:CarrotAuthenticationStatusReasonUnknown];
          break;
       }
       default:
@@ -413,7 +444,7 @@ static NSString* sCarrotDebugUDID = nil;
             NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
             NSLog(@"Unknown error adding Carrot user (%d): %@", response.statusCode,
                   error ? error : jsonReply);
-            [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
+            [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error andReason:CarrotAuthenticationStatusReasonUnknown];
          }
 
          dispatch_semaphore_signal(validateSema);

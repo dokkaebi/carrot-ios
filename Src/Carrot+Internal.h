@@ -18,7 +18,6 @@
 @interface Carrot ()
 
 @property (strong, nonatomic) NSString* appId;
-@property (nonatomic, readwrite, setter=setAuthenticationStatus:) CarrotAuthenticationStatus authenticationStatus;
 @property (strong, nonatomic) NSString* dataPath;
 @property (strong, nonatomic) NSString* udid;
 @property (strong, nonatomic) NSString* appSecret;
@@ -31,7 +30,7 @@
 @property (strong, nonatomic) NSString* appBuild;
 @property (nonatomic) UIBackgroundTaskIdentifier backgroundTask;
 
-- (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus withError:(NSError*)error;
+- (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus withError:(NSError*)error andReason:(CarrotAuthenticationStatusReason)reason;
 - (BOOL)updateAuthenticationStatus:(int)httpCode;
 - (void)validateUser;
 

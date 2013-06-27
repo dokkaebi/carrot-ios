@@ -86,6 +86,61 @@ void Carrot_HandleApplicationDidBecomeActive()
    }
 }
 
+static void HandleFacebookSessionError(NSError* error)
+{
+   if(error.fberrorShouldNotifyUser)
+   {
+      if([[error userInfo][FBErrorLoginFailedReason]
+          isEqualToString:FBErrorLoginFailedReasonSystemDisallowedWithoutErrorValue])
+      {
+         // User has disabled the app in the iOS Settings for Facebook
+         [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized withError:error andReason:CarrotAuthenticationStatusReasonAppDisabledInSettings];
+      }
+      else
+      {
+         // An unknown error that should be presented to the user
+         [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error andReason:CarrotAuthenticationStatusReasonUnknownShowUser];
+         /*
+         [[[UIAlertView alloc] initWithTitle:@"Facebook Error"
+                                     message:error.fberrorUserMessage
+                                    delegate:nil
+                           cancelButtonTitle:@"OK"
+                           otherButtonTitles:nil] show];
+          */
+      }
+   }
+   else
+   {
+      if(error.fberrorCategory == FBErrorCategoryUserCancelled)
+      {
+         // User has denied granting requested permissions
+         [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized withError:error andReason:CarrotAuthenticationStatusReasonUserDeniedPermissions];
+      }
+      else if(error.fberrorCategory == FBErrorCategoryAuthenticationReopenSession)
+      {
+         NSInteger underlyingSubCode = [[error userInfo]
+                                        [@"com.facebook.sdk:ParsedJSONResponseKey"]
+                                        [@"body"]
+                                        [@"error"]
+                                        [@"error_subcode"] integerValue];
+         if(underlyingSubCode == 458)
+         {
+            // User has removed the app from their Facebook settings
+            [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized withError:error andReason:CarrotAuthenticationStatusReasonUserRemovedApp];
+         }
+         else
+         {
+            // The session has expired
+            [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized withError:error andReason:CarrotAuthenticationStatusReasonSessionExpired];
+         }
+      }
+      else
+      {
+         [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error andReason:CarrotAuthenticationStatusReasonUnknown];
+      }
+   }
+}
+
 static void (^Carrot_FacebookSDKCompletionHandler)(FBSession*, FBSessionState, NSError*) = ^(FBSession* session, FBSessionState status, NSError* error)
 {
    if(session && [session isOpen])
@@ -105,21 +160,7 @@ static void (^Carrot_FacebookSDKCompletionHandler)(FBSession*, FBSessionState, N
    }
    else
    {
-      switch(error.code)
-      {
-         case FBErrorLoginFailedOrCancelled:
-         case FBErrorHTTPError:
-         {
-            [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized withError:error];
-         }
-         break;
-
-         default:
-         {
-            [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
-         }
-         break;
-      }
+      HandleFacebookSessionError(error);
    }
 };
 
@@ -131,7 +172,7 @@ static void (^Carrot_FacebookSDKReauthorizeHandler)(FBSession*, NSError*) = ^(FB
    }
    else
    {
-      [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
+      HandleFacebookSessionError(error);
    }
 };
 
