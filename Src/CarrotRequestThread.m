@@ -235,61 +235,52 @@ NSString* URLEscapedString(NSString* inString)
    };
 
    NSMutableDictionary* queryParamDict = [NSMutableDictionary dictionaryWithDictionary:request.payload];
+   [queryParamDict addEntriesFromDictionary:commonQueryDict];
 
    if(request.method != CarrotRequestTypePOST)
    {
       [queryParamDict addEntriesFromDictionary:@{@"_method" : request.method}];
    }
 
+   // Build query string to sign
    NSArray* queryKeysSorted = [[queryParamDict allKeys]
                                sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
-   NSMutableString* sortedQueryString = nil;
-
-   if(request.serviceType != CarrotRequestServiceAuth)
+   NSMutableString* sortedQueryString = [[NSMutableString alloc] init];
+   for(int i = 0; i < queryKeysSorted.count; i++)
    {
-      [queryParamDict addEntriesFromDictionary:commonQueryDict];
-      sortedQueryString = [[NSMutableString alloc] init];
-      for(int i = 0; i < queryKeysSorted.count; i++)
+      NSString* key = [queryKeysSorted objectAtIndex:i];
+      id value = [queryParamDict objectForKey:key];
+      NSString* valueString = value;
+      if([value isKindOfClass:[NSDictionary class]] ||
+         [value isKindOfClass:[NSArray class]])
       {
-         NSString* key = [queryKeysSorted objectAtIndex:i];
-         id value = [queryParamDict objectForKey:key];
-         NSString* valueString = value;
-         if([value isKindOfClass:[NSDictionary class]] ||
-            [value isKindOfClass:[NSArray class]])
+         NSError* error = nil;
+
+         NSData* jsonData = [NSJSONSerialization dataWithJSONObject:value options:0 error:&error];
+         if(error)
          {
-            NSError* error = nil;
-
-            NSData* jsonData = [NSJSONSerialization dataWithJSONObject:value options:0 error:&error];
-            if(error)
-            {
-               NSLog(@"Error converting %@ to JSON: %@", value, error);
-               valueString = [value description];
-            }
-            else
-            {
-               valueString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-            }
+            NSLog(@"Error converting %@ to JSON: %@", value, error);
+            valueString = [value description];
          }
-         [sortedQueryString appendFormat:@"%@=%@%s", key, valueString,
-          (i + 1 < queryKeysSorted.count ? "&" : "")];
+         else
+         {
+            valueString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+         }
       }
-
-      NSString* stringToSign = [NSString stringWithFormat:@"%@\n%@\n%@\n%@", @"POST", host, path,
-                                sortedQueryString];
-
-      NSData* dataToSign = [stringToSign dataUsingEncoding:NSUTF8StringEncoding];
-      uint8_t digestBytes[CC_SHA256_DIGEST_LENGTH];
-      CCHmac(kCCHmacAlgSHA256, [self.carrot.appSecret UTF8String], self.carrot.appSecret.length,
-             [dataToSign bytes], [dataToSign length], &digestBytes);
-
-      NSData* digestData = [NSData dataWithBytes:digestBytes length:CC_SHA256_DIGEST_LENGTH];
-      NSString* sigString = URLEscapedString([NSDataWithBase64 base64EncodedStringFromData:digestData]);
-
-      [queryParamDict setObject:sigString forKey:@"sig"];
-      NSMutableArray* newQueryKeys = [NSMutableArray arrayWithArray:queryKeysSorted];
-      [newQueryKeys addObject:@"sig"];
-      queryKeysSorted = newQueryKeys;
+      [sortedQueryString appendFormat:@"%@=%@%s", key, valueString,
+       (i + 1 < queryKeysSorted.count ? "&" : "")];
    }
+
+   NSString* stringToSign = [NSString stringWithFormat:@"%@\n%@\n%@\n%@", @"POST", host, path,
+                             sortedQueryString];
+
+   NSData* dataToSign = [stringToSign dataUsingEncoding:NSUTF8StringEncoding];
+   uint8_t digestBytes[CC_SHA256_DIGEST_LENGTH];
+   CCHmac(kCCHmacAlgSHA256, [self.carrot.appSecret UTF8String], self.carrot.appSecret.length,
+          [dataToSign bytes], [dataToSign length], &digestBytes);
+
+   NSData* digestData = [NSData dataWithBytes:digestBytes length:CC_SHA256_DIGEST_LENGTH];
+   NSString* sigString = URLEscapedString([NSDataWithBase64 base64EncodedStringFromData:digestData]);
 
    // Build URL escaped query string
    sortedQueryString = [[NSMutableString alloc] init];
@@ -317,6 +308,7 @@ NSString* URLEscapedString(NSString* inString)
       [sortedQueryString appendFormat:@"%@=%@&", key,
        ([value isKindOfClass:[NSNumber class]]) ? value : URLEscapedString(valueString)];
    }
+   [sortedQueryString appendFormat:@"sig=%@", sigString];
 
    return sortedQueryString;
 }
