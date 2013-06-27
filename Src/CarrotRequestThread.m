@@ -78,8 +78,7 @@ NSString* URLEscapedString(NSString* inString)
       self.reachability.reachableBlock = ^(CarrotReachability* reach)
       {
          // Do services discovery
-         NSString* urlString = [NSString stringWithFormat:@"%@://%@/services.json?sdk_version=%@&sdk_platform=%@&game_id=%@&app_version=%@&app_build=%@",
-                                kDefaultHostUrlScheme,
+         NSString* urlString = [NSString stringWithFormat:@"http://%@/services.json?sdk_version=%@&sdk_platform=%@&game_id=%@&app_version=%@&app_build=%@",
                                 kCarrotServicesHostname,
                                 URLEscapedString(weakSelf.carrot.version),
                                 URLEscapedString([NSString stringWithFormat:@"ios_%@",[[UIDevice currentDevice] systemVersion]]),
