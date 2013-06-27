@@ -126,6 +126,16 @@ NSString* URLEscapedString(NSString* inString)
    }
 }
 
+- (void)signal
+{
+   if(self.isRunning)
+   {
+      [self.requestQueuePause lock];
+      [self.requestQueuePause signal];
+      [self.requestQueuePause unlock];
+   }
+}
+
 - (NSString*)hostForServiceType:(CarrotRequestServiceType)serviceType
 {
    switch(serviceType)
@@ -135,7 +145,6 @@ NSString* URLEscapedString(NSString* inString)
       case CarrotRequestServicePost:    return self.postHostname;
    }
 }
-
 
 - (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload
 {
@@ -182,22 +191,23 @@ NSString* URLEscapedString(NSString* inString)
 
 - (void)addRequestInQueue:(CarrotRequest*)request atFront:(BOOL)atFront
 {
-   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      @synchronized(self.requestQueue)
-      {
-         if(atFront)
+   if(request.serviceType <= self.carrot.authenticationStatus)
+   {
+      dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+         @synchronized(self.requestQueue)
          {
-            [self.internalRequestQueue insertObject:request atIndex:0];
+            if(atFront)
+            {
+               [self.internalRequestQueue insertObject:request atIndex:0];
+            }
+            else
+            {
+               [self.internalRequestQueue addObject:request];
+            }
          }
-         else
-         {
-            [self.internalRequestQueue addObject:request];
-         }
-      }
-      [self.requestQueuePause lock];
-      [self.requestQueuePause signal];
-      [self.requestQueuePause unlock];
-   });
+         [self signal];
+      });
+   }
 }
 
 - (BOOL)loadQueueFromCache

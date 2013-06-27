@@ -34,6 +34,7 @@
 
 - (void)start;
 - (void)stop;
+- (void)signal;
 - (void)processRequest:(CarrotRequest*)request;
 
 - (void)addRequestInQueue:(CarrotRequest*)request atFront:(BOOL)atFront;
