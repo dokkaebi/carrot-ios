@@ -345,6 +345,14 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
 - (void)endApplicationSession:(UIApplication*)application;
 
 /**
+ * Inform Carrot about a purchase of premium currency for metrics tracking.
+ *
+ * @param amount     The amount of real money spent.
+ * @param currency   The type of real money spent (eg. USD).
+ */
+- (void)postPremiumCurrencyPurchase:(float)amount inCurrency:(NSString*)currency;
+
+/**
  * Post an achievement to the Carrot service.
  *
  * @param achievementId The achievement identifier.

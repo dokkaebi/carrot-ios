@@ -413,6 +413,18 @@ static NSString* sCarrotDebugUDID = nil;
    });
 }
 
+- (void)postPremiumCurrencyPurchase:(float)amount inCurrency:(NSString*)currency
+{
+   NSDictionary* payload = @{
+      @"amount" : [NSNumber numberWithFloat:amount],
+      @"currency" : currency
+   };
+   [self.requestThread addRequestForService:CarrotRequestServiceMetrics
+                                 atEndpoint:@"/purchase.json"
+                                usingMethod:CarrotRequestTypePOST
+                                withPayload:payload];
+}
+
 - (void)validateUser
 {
    if(!self.accessToken) return;
