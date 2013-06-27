@@ -45,7 +45,7 @@ NSString* CarrotRequestTypePOST = @"POST";
    NSDictionary* commonPayload = @{
       @"version" : [Carrot sharedInstance].appVersion,
       @"build" : [Carrot sharedInstance].appBuild,
-      @"tag" : [Carrot sharedInstance].appTag
+      @"tag" : [Carrot sharedInstance].appTag ? [Carrot sharedInstance].appTag : @"none"
    };
    NSMutableDictionary* finalPayload = [NSMutableDictionary dictionaryWithDictionary:commonPayload];
    [finalPayload addEntriesFromDictionary:payload];
