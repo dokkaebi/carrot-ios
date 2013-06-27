@@ -55,6 +55,8 @@ void Carrot_HandleApplicationDidBecomeActive()
       // Attempt to resume session.
       case FBSessionStateCreatedTokenLoaded:
       {
+         [Carrot sharedInstance].cachedSessionStatusReason = CarrotAuthenticationStatusReasonSessionExists;
+
          if([FBSession instancesRespondToSelector:@selector(openActiveSessionWithAllowLoginUI:)])
          {
             // Legacy Facebook SDK support
@@ -73,20 +75,31 @@ void Carrot_HandleApplicationDidBecomeActive()
       }
       break;
 
+      case FBSessionStateCreatedOpening:
+      {
+         [Carrot sharedInstance].cachedSessionStatusReason = CarrotAuthenticationStatusReasonNewSession;
+      }
+      break;
+
       // Session already open.
       case FBSessionStateOpenTokenExtended:
       case FBSessionStateOpen:
       {
+         [Carrot sharedInstance].cachedSessionStatusReason = CarrotAuthenticationStatusReasonSessionExists;
+
          [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession([FBSession activeSession])];
       }
       break;
 
       default:
-         break;
+      {
+         [Carrot sharedInstance].cachedSessionStatusReason = CarrotAuthenticationStatusReasonNewSession;
+      }
+      break;
    }
 }
 
-static void HandleFacebookSessionError(NSError* error)
+static void HandleFacebookSessionError(NSError* error, CarrotAuthenticationStatus denyStatus)
 {
    if(error.fberrorShouldNotifyUser)
    {
@@ -114,7 +127,7 @@ static void HandleFacebookSessionError(NSError* error)
       if(error.fberrorCategory == FBErrorCategoryUserCancelled)
       {
          // User has denied granting requested permissions
-         [[Carrot sharedInstance] setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized withError:error andReason:CarrotAuthenticationStatusReasonUserDeniedPermissions];
+         [[Carrot sharedInstance] setAuthenticationStatus:denyStatus withError:error andReason:CarrotAuthenticationStatusReasonUserDeniedPermissions];
       }
       else if(error.fberrorCategory == FBErrorCategoryAuthenticationReopenSession)
       {
@@ -160,19 +173,19 @@ static void (^Carrot_FacebookSDKCompletionHandler)(FBSession*, FBSessionState, N
    }
    else
    {
-      HandleFacebookSessionError(error);
+      HandleFacebookSessionError(error, CarrotAuthenticationStatusNotAuthorized);
    }
 };
 
 static void (^Carrot_FacebookSDKReauthorizeHandler)(FBSession*, NSError*) = ^(FBSession* session, NSError* error)
 {
-   if(session && [session isOpen])
+   if(error != nil)
+   {
+      HandleFacebookSessionError(error, [Carrot sharedInstance].authenticationStatus);
+   }
+   else if(session && [session isOpen])
    {
       [[Carrot sharedInstance] setAccessToken:Carrot_GetAccessTokenFromSession(session)];
-   }
-   else
-   {
-      HandleFacebookSessionError(error);
    }
 };
 

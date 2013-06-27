@@ -29,8 +29,10 @@
 @property (strong, nonatomic) NSString* appVersion;
 @property (strong, nonatomic) NSString* appBuild;
 @property (nonatomic) UIBackgroundTaskIdentifier backgroundTask;
+@property (nonatomic) CarrotAuthenticationStatusReason cachedSessionStatusReason;
 
 - (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus withError:(NSError*)error andReason:(CarrotAuthenticationStatusReason)reason;
+
 - (BOOL)updateAuthenticationStatus:(int)httpCode;
 - (void)validateUser;
 

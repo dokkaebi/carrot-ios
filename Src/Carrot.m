@@ -166,6 +166,8 @@ static NSString* sCarrotDebugUDID = nil;
    {
       _authenticationStatus = CarrotAuthenticationStatusUndetermined;
       self.lastAuthStatusReported = _authenticationStatus;
+      _cachedSessionStatusReason = CarrotAuthenticationStatusReasonUnknown;
+
       self.appId = appId;
       self.appSecret = appSecret;
       self.udid = (debugUDIDOrNil == nil ? [CarrotOpenUDID value] : debugUDIDOrNil);
@@ -278,7 +280,7 @@ static NSString* sCarrotDebugUDID = nil;
          // Everything is in order, we are online
          [self setAuthenticationStatus:CarrotAuthenticationStatusReady
                              withError:nil
-                             andReason:CarrotAuthenticationStatusReasonSessionExists];
+                             andReason:self.cachedSessionStatusReason];
 
          // Signal the request thread to wake up
          [self.requestThread signal];
@@ -289,7 +291,7 @@ static NSString* sCarrotDebugUDID = nil;
          // The user has not allowed the 'publish_actions' permission.
          [self setAuthenticationStatus:CarrotAuthenticationStatusReadOnly
                              withError:nil
-                             andReason:CarrotAuthenticationStatusReasonUnknown];
+                             andReason:self.cachedSessionStatusReason];
          break;
       }
       case 405: // Method Not Allowed
@@ -297,7 +299,7 @@ static NSString* sCarrotDebugUDID = nil;
          // The user has not authorized the application, or deauthorized the application.
          [self setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized
                              withError:nil
-                             andReason:CarrotAuthenticationStatusReasonUnknown];
+                             andReason:self.cachedSessionStatusReason];
          break;
       }
       default:
