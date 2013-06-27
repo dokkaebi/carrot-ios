@@ -196,6 +196,14 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
 @property (strong, nonatomic, readonly) NSString* version;
 
 /**
+ * An app-specified tag for associating metrics with A/B testing groups or
+ * other purposes.
+ *
+ * @note This should be assigned as soon as possible after app launch.
+ */
+@property (strong, nonatomic) NSString* appTag;
+
+/**
  * Carrot singleton.
  *
  * Carrot will retrieve your Facebook application id in the same way that the Facebook SDK
