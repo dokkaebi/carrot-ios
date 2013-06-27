@@ -404,7 +404,7 @@ static NSString* sCarrotDebugUDID = nil;
       [self beginBackgroundTaskForApplication:application];
       CarrotCachedRequest* cachedRequest =
       [CarrotCachedRequest requestForService:CarrotRequestServiceMetrics
-                                  atEndpoint:@"/me/session.json"
+                                  atEndpoint:@"/session.json"
                                  withPayload:payload
                                      inCache:self.requestThread.sqliteDb
                        synchronizingOnObject:self.requestThread.requestQueue];
