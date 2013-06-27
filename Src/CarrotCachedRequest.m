@@ -196,8 +196,11 @@ static BOOL carrotcache_commit(sqlite3* cache)
       sqlite3_finalize(sqlStatement);
       sqlite3_free(sqlString);
 
+      CARROTCACHE_ROLLBACK_FAIL(ret, cache);
+
       // Commit transaction
-      CARROTCACHE_ROLLBACK_FAIL(ret && carrotcache_commit(cache), cache);
+      ret = carrotcache_commit(cache);
+      CARROTCACHE_ROLLBACK_FAIL(ret, cache);
    }
 
    return ret;
