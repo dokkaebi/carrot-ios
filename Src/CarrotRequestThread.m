@@ -78,12 +78,37 @@ NSString* URLEscapedString(NSString* inString)
       self.reachability.reachableBlock = ^(CarrotReachability* reach)
       {
          // Do services discovery
-         weakSelf.postHostname = @"gocarrot.com";
-         weakSelf.authHostname = @"gocarrot.com";
-         weakSelf.metricsHostname = @"metrics.gocarrot.com";
+         NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:@"%@://%@/services.json", kDefaultHostUrlScheme, kCarrotServicesHostname]];
+         NSURLRequest* request = [NSURLRequest requestWithURL:url
+                                                  cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
+                                              timeoutInterval:120];
+         [NSURLConnection sendAsynchronousRequest:request
+                                            queue:[NSOperationQueue mainQueue]
+                                completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
+            if(error)
+            {
+               NSLog(@"Unable to perform services discovery for Carrot. Carrot is in offline mode.\n%@", error);
+            }
+            else
+            {
+               NSDictionary* services = [NSJSONSerialization JSONObjectWithData:data
+                                                                        options:kNilOptions
+                                                                          error:&error];
+               if(error)
+               {
+                  NSLog(@"Unable to perform services discovery for Carrot. Carrot is in offline mode.\n%@", error);
+               }
+               else
+               {
+                  weakSelf.postHostname = [services objectForKey:@"post"];
+                  weakSelf.authHostname = [services objectForKey:@"auth"];
+                  weakSelf.metricsHostname = [services objectForKey:@"metrics"];
 
-         [weakSelf start];
-         [weakSelf.carrot validateUser];
+                  [weakSelf start];
+                  [weakSelf.carrot validateUser];
+               }
+            }
+         }];
       };
       self.reachability.unreachableBlock = ^(CarrotReachability* reach)
       {
