@@ -392,6 +392,10 @@ NSString* URLEscapedString(NSString* inString)
 - (void)processRequest:(CarrotRequest*)request
 {
    NSString* host = [self hostForServiceType:request.serviceType];
+
+   // If host is nil or empty, the server said "don't send me these now"
+   if(!(host && host.length)) return;
+
    NSString* postBody = [self signedPostBody:request forHost:host];
 
    NSMutableURLRequest* preppedRequest = nil;
