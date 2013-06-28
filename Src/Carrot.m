@@ -32,6 +32,7 @@ extern NSString* URLEscapedString(NSString* inString);
 @property (nonatomic, readwrite, setter=setAuthenticationStatus:) CarrotAuthenticationStatus authenticationStatus;
 @property (nonatomic, readwrite, setter=setAuthenticationStatusReason:) CarrotAuthenticationStatusReason authenticationStatusReason;
 @property (strong, nonatomic, readwrite) NSString* version;
+@property (strong, nonatomic, readwrite) NSDate* installDate;
 
 @end
 
@@ -196,6 +197,9 @@ static NSString* sCarrotDebugUDID = nil;
          NSLog(@"Unable to create Carrot request thread.");
          return nil;
       }
+
+      // Assign install date
+      _installDate = [CarrotCachedRequest installDate];
 
       // Get bundle version information
       NSBundle* mainBundle = [NSBundle mainBundle];

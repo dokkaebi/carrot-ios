@@ -204,6 +204,11 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
 @property (strong, nonatomic) NSString* appTag;
 
 /**
+ * The date of install for this app, on this device.
+ */
+@property (strong, nonatomic, readonly) NSDate* installDate;
+
+/**
  * Carrot singleton.
  *
  * Carrot will retrieve your Facebook application id in the same way that the Facebook SDK
