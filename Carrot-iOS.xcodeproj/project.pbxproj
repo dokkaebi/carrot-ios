@@ -41,6 +41,8 @@
 		437A1C2915FA66FA00971F2E /* OpenUDID.m in Sources */ = {isa = PBXBuildFile; fileRef = 437A1C2315FA66FA00971F2E /* OpenUDID.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		437A1C2A15FA66FA00971F2E /* Reachability.h in Headers */ = {isa = PBXBuildFile; fileRef = 437A1C2415FA66FA00971F2E /* Reachability.h */; };
 		437A1C2B15FA66FA00971F2E /* Reachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 437A1C2515FA66FA00971F2E /* Reachability.m */; };
+		43A8C0C7177E0D30008654F0 /* CarrotCache.h in Headers */ = {isa = PBXBuildFile; fileRef = 43A8C0C5177E0D30008654F0 /* CarrotCache.h */; };
+		43A8C0C8177E0D30008654F0 /* CarrotCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 43A8C0C6177E0D30008654F0 /* CarrotCache.m */; };
 		43B9F294167FDB3B00CDD5F8 /* CarrotRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 43B9F292167FDB3B00CDD5F8 /* CarrotRequest.h */; };
 		43B9F295167FDB3B00CDD5F8 /* CarrotRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 43B9F293167FDB3B00CDD5F8 /* CarrotRequest.m */; };
 /* End PBXBuildFile section */
@@ -76,6 +78,8 @@
 		437A1C2315FA66FA00971F2E /* OpenUDID.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenUDID.m; sourceTree = "<group>"; };
 		437A1C2415FA66FA00971F2E /* Reachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Reachability.h; sourceTree = "<group>"; };
 		437A1C2515FA66FA00971F2E /* Reachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Reachability.m; sourceTree = "<group>"; };
+		43A8C0C5177E0D30008654F0 /* CarrotCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CarrotCache.h; path = Src/CarrotCache.h; sourceTree = SOURCE_ROOT; };
+		43A8C0C6177E0D30008654F0 /* CarrotCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CarrotCache.m; path = Src/CarrotCache.m; sourceTree = SOURCE_ROOT; };
 		43B9F292167FDB3B00CDD5F8 /* CarrotRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CarrotRequest.h; path = Src/CarrotRequest.h; sourceTree = SOURCE_ROOT; };
 		43B9F293167FDB3B00CDD5F8 /* CarrotRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CarrotRequest.m; path = Src/CarrotRequest.m; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
@@ -124,6 +128,8 @@
 			children = (
 				437A1C1115FA66E900971F2E /* Carrot.h */,
 				437A1C1215FA66E900971F2E /* Carrot.m */,
+				43A8C0C5177E0D30008654F0 /* CarrotCache.h */,
+				43A8C0C6177E0D30008654F0 /* CarrotCache.m */,
 				437A1C1315FA66E900971F2E /* CarrotCachedRequest.h */,
 				437A1C1415FA66E900971F2E /* CarrotCachedRequest.m */,
 				437A1C1515FA66E900971F2E /* CarrotCAPI.m */,
@@ -178,6 +184,7 @@
 				437A1C2A15FA66FA00971F2E /* Reachability.h in Headers */,
 				431CFFA3162737C000D74667 /* Carrot+Internal.h in Headers */,
 				43B9F294167FDB3B00CDD5F8 /* CarrotRequest.h in Headers */,
+				43A8C0C7177E0D30008654F0 /* CarrotCache.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -276,6 +283,7 @@
 				43679B2F1602A3840042CC31 /* CarrotHooks.m in Sources */,
 				433F6C471605236700CA65A2 /* CarrotFacebook.m in Sources */,
 				43B9F295167FDB3B00CDD5F8 /* CarrotRequest.m in Sources */,
+				43A8C0C8177E0D30008654F0 /* CarrotCache.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

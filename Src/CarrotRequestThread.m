@@ -18,17 +18,26 @@
 #import "CarrotRequestThread.h"
 #import "CarrotCachedRequest.h"
 #import "AmazonSDKUtil.h"
+#import "Reachability.h"
 
 #include <CommonCrypto/CommonHMAC.h>
+
+#define kCarrotServicesHostname @"services.gocarrot.com"
+#define kDefaultHostUrlScheme @"https"
 
 @interface CarrotRequestThread ()
 
 @property (strong, nonatomic) NSMutableArray* internalRequestQueue;
 @property (weak, nonatomic, readwrite) NSArray* requestQueue;
-@property (nonatomic, readwrite) sqlite3* sqliteDb;
+@property (strong, nonatomic, readwrite) CarrotCache* cache;
 @property (assign, nonatomic) Carrot* carrot;
 @property (nonatomic) BOOL keepThreadRunning;
 @property (strong, nonatomic) NSCondition* requestQueuePause;
+@property (strong, nonatomic) NSString* postHostname;
+@property (strong, nonatomic) NSString* metricsHostname;
+@property (strong, nonatomic) NSString* authHostname;
+@property (strong, nonatomic) CarrotReachability* reachability;
+@property (strong, nonatomic) NSDate* lastDiscoveryDate;
 
 @end
 
@@ -49,49 +58,81 @@ NSString* URLEscapedString(NSString* inString)
       self.carrot = carrot;
       self.maxRetryCount = 0; // Infinite retries by default
       self.requestQueuePause = [[NSCondition alloc] init];
+      self.lastDiscoveryDate = nil;
+      self.cache = carrot.cache;
       _isRunning = NO;
 
-      // Init sqlite
-      int sql3Err = sqlite3_open([[carrot.dataPath stringByAppendingPathComponent:@"RequestQueue.db"] UTF8String], &_sqliteDb);
-      if(sql3Err != SQLITE_OK)
+      // Start up Reachability monitor
+      __weak typeof(self) weakSelf = self;
+      self.reachability = [CarrotReachability reachabilityWithHostname:kCarrotServicesHostname];
+      self.reachability.reachableBlock = ^(CarrotReachability* reach)
       {
-         NSLog(@"Error creating Carrot data store at: %@", carrot.dataPath);
-         return nil;
-      }
-
-      // Create cache if needed
-      BOOL cacheSuccess = YES;
-      sqlite3_stmt* sqlStatement;
-      if(sqlite3_prepare_v2(self.sqliteDb, [CarrotCachedRequest cacheCreateSQLStatement],
-                            -1, &sqlStatement, NULL) == SQLITE_OK)
+         [weakSelf performDiscovery];
+      };
+      self.reachability.unreachableBlock = ^(CarrotReachability* reach)
       {
-         if(sqlite3_step(sqlStatement) != SQLITE_DONE)
-         {
-            NSLog(@"Failed to create Carrot cache. Error: %s'", sqlite3_errmsg(self.sqliteDb));
-            cacheSuccess = NO;
-         }
-      }
-      else
-      {
-         NSLog(@"Failed to create Carrot cache statement. Error: '%s'", sqlite3_errmsg(self.sqliteDb));
-         cacheSuccess = NO;
-      }
-      sqlite3_finalize(sqlStatement);
-
-      if(!cacheSuccess)
-      {
-         return nil;
-      }
+         [weakSelf stop];
+      };
+      [self.reachability startNotifier];
    }
    return self;
 }
 
 - (void)dealloc
 {
-   self.internalRequestQueue = nil;
+   [self.reachability stopNotifier];
+   self.reachability = nil;
 
-   sqlite3_close(_sqliteDb);
-   _sqliteDb = nil;
+   self.internalRequestQueue = nil;
+}
+
+- (void)performDiscovery
+{
+   NSDate* nextDiscoveryDate = [self.lastDiscoveryDate dateByAddingTimeInterval: 24 * 60 * 60];
+   if(self.lastDiscoveryDate != nil &&
+      ([self.lastDiscoveryDate compare:nextDiscoveryDate] == NSOrderedAscending))
+   {
+      return;
+   }
+   self.lastDiscoveryDate = [NSDate date];
+
+   NSString* urlString = [NSString stringWithFormat:@"http://%@/services.json?sdk_version=%@&sdk_platform=%@&game_id=%@&app_version=%@&app_build=%@",
+                          kCarrotServicesHostname,
+                          URLEscapedString(self.carrot.version),
+                          URLEscapedString([NSString stringWithFormat:@"ios_%@",[[UIDevice currentDevice] systemVersion]]),
+                          URLEscapedString(self.carrot.appId),
+                          URLEscapedString(self.carrot.appVersion),
+                          URLEscapedString(self.carrot.appBuild)];
+   NSURLRequest* request = [NSURLRequest requestWithURL:[NSURL URLWithString:urlString]
+                                            cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
+                                        timeoutInterval:120];
+   [NSURLConnection sendAsynchronousRequest:request
+                                      queue:[NSOperationQueue mainQueue]
+                          completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
+      if(error)
+      {
+        NSLog(@"Unable to perform services discovery for Carrot. Carrot is in offline mode.\n%@", error);
+      }
+      else
+      {
+        NSDictionary* services = [NSJSONSerialization JSONObjectWithData:data
+                                                                 options:kNilOptions
+                                                                   error:&error];
+        if(error)
+        {
+           NSLog(@"Unable to perform services discovery for Carrot. Carrot is in offline mode.\n%@", error);
+        }
+        else
+        {
+           self.postHostname = [services objectForKey:@"post"];
+           self.authHostname = [services objectForKey:@"auth"];
+           self.metricsHostname = [services objectForKey:@"metrics"];
+
+           [self start];
+           [self.carrot validateUser];
+        }
+      }
+   }];
 }
 
 - (void)start
@@ -115,76 +156,87 @@ NSString* URLEscapedString(NSString* inString)
    }
 }
 
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload
+- (void)signal
 {
-   return [self addRequestForEndpoint:endpoint usingMethod:method withPayload:payload callback:nil atFront:NO];
+   if(self.isRunning)
+   {
+      [self.requestQueuePause lock];
+      [self.requestQueuePause signal];
+      [self.requestQueuePause unlock];
+   }
 }
 
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback
+- (NSString*)hostForServiceType:(CarrotRequestServiceType)serviceType
 {
-      return [self addRequestForEndpoint:endpoint usingMethod:method withPayload:payload callback:callback atFront:NO];
+   switch(serviceType)
+   {
+      case CarrotRequestServiceAuth:    return self.authHostname;
+      case CarrotRequestServiceMetrics: return self.metricsHostname;
+      case CarrotRequestServicePost:    return self.postHostname;
+   }
 }
 
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload
+{
+   return [self addRequestForService:serviceType atEndpoint:endpoint usingMethod:method withPayload:payload callback:nil atFront:NO];
+}
+
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint  usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback
+{
+   return [self addRequestForService:serviceType atEndpoint:endpoint usingMethod:method withPayload:payload callback:callback atFront:NO];
+}
+
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint  usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront
 {
    BOOL ret = YES;
    if(method == CarrotRequestTypeGET)
    {
-      dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-         @synchronized(self.internalRequestQueue)
-         {
-            if(atFront)
-            {
-               [self.internalRequestQueue insertObject:[CarrotRequest requestForEndpoint:endpoint
-                                                                          usingMethod:method
-                                                                          withPayload:payload
-                                                                             callback:callback]
-                                               atIndex:0];
-            }
-            else
-            {
-               [self.internalRequestQueue addObject:[CarrotRequest requestForEndpoint:endpoint
-                                                                          usingMethod:method
-                                                                          withPayload:payload
-                                                                             callback:callback]];
-            }
-         }
-      });
+
+      CarrotRequest* request = [CarrotRequest requestForService:serviceType
+                                                     atEndpoint:endpoint
+                                                    usingMethod:method
+                                                    withPayload:payload
+                                                       callback:callback];
+      [self addRequestInQueue:request atFront:atFront];
    }
    else
    {
       CarrotCachedRequest* cachedRequest =
-      [CarrotCachedRequest requestForEndpoint:endpoint
-                                  withPayload:payload
-                                      inCache:self.sqliteDb
-                        synchronizingOnObject:self.requestQueue];
+      [CarrotCachedRequest requestForService:serviceType
+                                  atEndpoint:endpoint
+                                 withPayload:payload
+                                     inCache:self.cache];
 
       if(cachedRequest)
       {
-         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            @synchronized(self.requestQueue)
-            {
-               if(atFront)
-               {
-                  [self.internalRequestQueue insertObject:cachedRequest atIndex:0];
-               }
-               else
-               {
-                  [self.internalRequestQueue addObject:cachedRequest];
-               }
-            }
-         });
+         [self addRequestInQueue:cachedRequest atFront:atFront];
       }
 
       ret = (cachedRequest != nil);
    }
 
-   // Signal thread to start up if it is waiting
-   [self.requestQueuePause lock];
-   [self.requestQueuePause signal];
-   [self.requestQueuePause unlock];
-
    return ret;
+}
+
+- (void)addRequestInQueue:(CarrotRequest*)request atFront:(BOOL)atFront
+{
+   if(request.serviceType <= self.carrot.authenticationStatus)
+   {
+      dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+         @synchronized(self.requestQueue)
+         {
+            if(atFront)
+            {
+               [self.internalRequestQueue insertObject:request atIndex:0];
+            }
+            else
+            {
+               [self.internalRequestQueue addObject:request];
+            }
+         }
+         [self signal];
+      });
+   }
 }
 
 - (BOOL)loadQueueFromCache
@@ -192,15 +244,15 @@ NSString* URLEscapedString(NSString* inString)
    BOOL ret = NO;
    @synchronized(self.requestQueue)
    {
-      NSArray* cachedRequests = [CarrotCachedRequest requestsInCache:self.sqliteDb];
+      NSArray* cachedRequests = [self.cache
+                                 cachedRequestsForAuthStatus:self.carrot.authenticationStatus];
       [self.internalRequestQueue addObjectsFromArray:cachedRequests];
    }
    return ret;
 }
 
-- (NSString*)signedPostBody:(CarrotRequest*)request
+- (NSString*)signedPostBody:(CarrotRequest*)request forHost:(NSString*)host
 {
-   NSString* host = self.carrot.hostname;
    NSString* path = request.endpoint;
    if(path == nil || path.length < 1) path = @"/";
 
@@ -336,12 +388,17 @@ NSString* URLEscapedString(NSString* inString)
 
 - (void)processRequest:(CarrotRequest*)request
 {
-   NSString* postBody = [self signedPostBody:request];
+   NSString* host = [self hostForServiceType:request.serviceType];
+
+   // If host is nil or empty, the server said "don't send me these now"
+   if(!(host && host.length)) return;
+
+   NSString* postBody = [self signedPostBody:request forHost:host];
 
    NSMutableURLRequest* preppedRequest = nil;
 
    NSData* postData = [postBody dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
-   preppedRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@://%@%@", self.carrot.hostUrlScheme, self.carrot.hostname, request.endpoint]]];
+   preppedRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@://%@%@", kDefaultHostUrlScheme, host, request.endpoint]]];
 
    [preppedRequest setHTTPBody:postData];
    [preppedRequest setValue:[NSString stringWithFormat:@"%d", [postData length]]

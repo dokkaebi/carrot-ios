@@ -14,8 +14,8 @@
  */
 
 #import <Foundation/Foundation.h>
+#import "CarrotCache.h"
 #import "CarrotRequest.h"
-#include <sqlite3.h>
 
 @class Carrot;
 
@@ -23,15 +23,21 @@
 
 @property (nonatomic, readonly) BOOL isRunning;
 @property (nonatomic) NSUInteger maxRetryCount; // 0 = infinite
-@property (nonatomic, readonly) sqlite3* sqliteDb;
+@property (strong, nonatomic, readonly) CarrotCache* cache;
 @property (weak, nonatomic, readonly) NSArray* requestQueue;
 
 - (id)initWithCarrot:(Carrot*)carrot;
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload;
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback;
-- (BOOL)addRequestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront;
+
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload;
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint  usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback;
+- (BOOL)addRequestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint  usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback atFront:(BOOL)atFront;
+
 - (void)start;
 - (void)stop;
+- (void)signal;
 - (void)processRequest:(CarrotRequest*)request;
+- (void)performDiscovery;
+
+- (void)addRequestInQueue:(CarrotRequest*)request atFront:(BOOL)atFront;
 
 @end

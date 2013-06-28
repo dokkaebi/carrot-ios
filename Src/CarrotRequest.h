@@ -16,6 +16,12 @@
 #import <Foundation/Foundation.h>
 #include <sqlite3.h>
 
+typedef enum {
+   CarrotRequestServiceAuth    = -2,
+   CarrotRequestServiceMetrics = -1,
+   CarrotRequestServicePost    = 2
+} CarrotRequestServiceType;
+
 @class CarrotRequestThread;
 
 typedef void (^CarrotRequestResponse)(NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread);
@@ -25,13 +31,16 @@ extern NSString* CarrotRequestTypePOST;
 
 @interface CarrotRequest : NSObject
 
+@property (nonatomic, readonly) CarrotRequestServiceType serviceType;
 @property (strong, nonatomic, readonly) NSString* endpoint;
 @property (strong, nonatomic, readonly) NSDictionary* payload;
 @property (strong, nonatomic, readonly) NSString* method;
 @property (strong, nonatomic, readonly) CarrotRequestResponse callback;
 
-+ (id)requestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback;
-- (id)initWithEndpoint:(NSString*)endpoint usingMethod:(NSString*)method payload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback;
++ (NSDictionary*)finalPayloadForPayload:(NSDictionary*)payload;
+
++ (id)requestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback;
+- (id)initForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method payload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback;
 
 - (NSString*)description;
 

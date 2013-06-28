@@ -14,12 +14,14 @@
  */
 
 #import "CarrotRequest.h"
+#import "Carrot+Internal.h"
 
 NSString* CarrotRequestTypeGET = @"GET";
 NSString* CarrotRequestTypePOST = @"POST";
 
 @interface CarrotRequest ()
 
+@property (nonatomic, readwrite) CarrotRequestServiceType serviceType;
 @property (strong, nonatomic, readwrite) NSString* endpoint;
 @property (strong, nonatomic, readwrite) NSDictionary* payload;
 @property (strong, nonatomic, readwrite) NSString* method;
@@ -29,30 +31,45 @@ NSString* CarrotRequestTypePOST = @"POST";
 
 @implementation CarrotRequest
 
-+ (id)requestForEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback
++ (id)requestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method withPayload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback
 {
-   return [[CarrotRequest alloc] initWithEndpoint:endpoint
-                                      usingMethod:method
-                                          payload:payload
-                                         callback:callback];
+   return [[CarrotRequest alloc] initForService:serviceType
+                                     atEndpoint:endpoint
+                                    usingMethod:method
+                                        payload:payload
+                                       callback:callback];
 }
 
-- (id)initWithEndpoint:(NSString*)endpoint usingMethod:(NSString*)method payload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback
++ (NSDictionary*)finalPayloadForPayload:(NSDictionary*)payload
+{
+   NSDictionary* commonPayload = @{
+      @"version" : [Carrot sharedInstance].appVersion,
+      @"build" : [Carrot sharedInstance].appBuild,
+      @"tag" : [Carrot sharedInstance].appTag ? [Carrot sharedInstance].appTag : @"none"
+   };
+   NSMutableDictionary* finalPayload = [NSMutableDictionary dictionaryWithDictionary:commonPayload];
+   [finalPayload addEntriesFromDictionary:payload];
+   return finalPayload;
+}
+
+- (id)initForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint usingMethod:(NSString*)method payload:(NSDictionary*)payload callback:(CarrotRequestResponse)callback
 {
    self = [super init];
    if(self)
    {
+      self.serviceType = serviceType;
       self.endpoint = endpoint;
-      self.payload = payload;
+      self.payload = [CarrotRequest finalPayloadForPayload:payload];
       self.method = method;
       self.callback = callback;
    }
    return self;
 }
 
+
 - (NSString*)description
 {
-   return [NSString stringWithFormat:@"Carrot Request: {\n\t'request_endpoint':'%@',\n\t'request_method':'%@',\n\t'request_payload':'%@'\n}", self.endpoint, self.method, self.payload];
+   return [NSString stringWithFormat:@"Carrot Request: {\n\t'request_servicetype':'%d'\n\t'request_endpoint':'%@',\n\t'request_method':'%@',\n\t'request_payload':'%@'\n}", self.serviceType, self.endpoint, self.method, self.payload];
 }
 
 @end

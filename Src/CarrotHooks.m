@@ -14,8 +14,8 @@
  */
 
 #import <Carrot/Carrot.h>
-#import <UIKit/UIKit.h>
 #import <objc/runtime.h>
+#import "Carrot+Internal.h"
 
 extern void Carrot_HandleApplicationDidBecomeActive();
 
@@ -32,12 +32,14 @@ extern void Carrot_HandleApplicationDidBecomeActive();
 
 - (void)application:(UIApplication*)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken;
 
+- (void)applicationDidEnterBackground:(UIApplication*)application;
 @end
 
 static IMP sHostAppOpenURLIMP = NULL;
 static IMP sHostAppDepOpenURLIMP = NULL;
 static IMP sHostDBAIMP = NULL;
 static IMP sHostAppPushRegIMP = NULL;
+static IMP sHostDEBIMP = NULL;
 
 void Carrot_Plant(Class appDelegateClass, NSString* appSecret)
 {
@@ -70,6 +72,12 @@ void Carrot_Plant(Class appDelegateClass, NSString* appSecret)
 
    Method ctAppPushReg = class_getInstanceMethod([CarrotAppDelegateHooks class], appPushRegMethod.name);
    sHostAppPushRegIMP = class_replaceMethod(appDelegateClass, appPushRegMethod.name, method_getImplementation(ctAppPushReg), appPushRegMethod.types);
+
+   // applicationDidEnterBackground:
+   struct objc_method_description appDEBMethod = protocol_getMethodDescription(uiAppDelegateProto, @selector(applicationDidEnterBackground:), NO, YES);
+
+   Method ctAppDEB = class_getInstanceMethod([CarrotAppDelegateHooks class], appDEBMethod.name);
+   sHostDEBIMP = class_replaceMethod(appDelegateClass, appDEBMethod.name, method_getImplementation(ctAppDEB), appDEBMethod.types);
 }
 
 @implementation CarrotAppDelegateHooks
@@ -100,6 +108,9 @@ void Carrot_Plant(Class appDelegateClass, NSString* appSecret)
 
 - (void)applicationDidBecomeActive:(UIApplication*)application
 {
+   [[Carrot sharedInstance].requestThread performDiscovery];
+   [[Carrot sharedInstance] sendInstallMetricIfNeeded];
+   [[Carrot sharedInstance] beginApplicationSession:application];
    Carrot_HandleApplicationDidBecomeActive();
    if(sHostDBAIMP)
    {
@@ -112,6 +123,15 @@ void Carrot_Plant(Class appDelegateClass, NSString* appSecret)
    if(sHostAppPushRegIMP)
    {
       sHostAppPushRegIMP(self, @selector(application:didRegisterForRemoteNotificationsWithDeviceToken:), application, deviceToken);
+   }
+}
+
+- (void)applicationDidEnterBackground:(UIApplication*)application
+{
+   [[Carrot sharedInstance] endApplicationSession:application];
+   if(sHostDEBIMP)
+   {
+      sHostDEBIMP(self, @selector(applicationDidEnterBackground:), application);
    }
 }
 

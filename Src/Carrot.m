@@ -15,12 +15,11 @@
 
 #import <Carrot/Carrot.h>
 #import "Carrot+Internal.h"
-#import "CarrotRequestThread.h"
+#import "CarrotCachedRequest.h"
 #import "OpenUDID.h"
 #import "Reachability.h"
 
-#define kCarrotDefaultHostname @"gocarrot.com"
-#define kCarrotDefaultHostUrlScheme @"https"
+#define kCarrotSDKVersion @"1.1.0"
 
 extern void Carrot_Plant(Class appDelegateClass, NSString* appSecret);
 extern void Carrot_GetFBAppId(NSMutableString* outString);
@@ -29,9 +28,11 @@ extern NSString* URLEscapedString(NSString* inString);
 
 @interface Carrot ()
 
-@property (strong, nonatomic) CarrotRequestThread* requestThread;
-@property (strong, nonatomic) CarrotReachability* reachability;
 @property (nonatomic) CarrotAuthenticationStatus lastAuthStatusReported;
+@property (nonatomic, readwrite, setter=setAuthenticationStatus:) CarrotAuthenticationStatus authenticationStatus;
+@property (nonatomic, readwrite, setter=setAuthenticationStatusReason:) CarrotAuthenticationStatusReason authenticationStatusReason;
+@property (strong, nonatomic, readwrite) NSString* version;
+@property (strong, nonatomic, readwrite) NSDate* installDate;
 
 @end
 
@@ -46,6 +47,14 @@ static NSString* sCarrotDebugUDID = nil;
    static Carrot* sharedInstance = nil;
    static dispatch_once_t onceToken;
    dispatch_once(&onceToken, ^{
+      if(![NSError instancesRespondToSelector:@selector(fberrorShouldNotifyUser)])
+      {
+         NSException *exception = [NSException exceptionWithName:@"AdditionalLinkerFlagRequired"
+                                                          reason:@"Use of the Carrot SDK requires adding '-ObjC' to the 'Other Linker Flags' setting of your Xcode Project. See: https://gocarrot.com/docs/ios for more information."
+                                                        userInfo:nil];
+         @throw exception;
+      }
+
       sharedInstance = [[Carrot alloc] init];
    });
    return sharedInstance;
@@ -117,6 +126,22 @@ static NSString* sCarrotDebugUDID = nil;
    sCarrotDebugUDID = debugUDID;
 }
 
+- (void)setAuthenticationStatus:(CarrotAuthenticationStatus)status
+{
+   NSException *exception = [NSException exceptionWithName:@"DontUseThisSetter"
+                                                    reason:@"Use setAuthenticationStatus:withError:andReason: instead."
+                                                  userInfo: nil];
+   @throw exception;
+}
+
+- (void)setAuthenticationStatusReason:(CarrotAuthenticationStatusReason)reason
+{
+   NSException *exception = [NSException exceptionWithName:@"DontUseThisSetter"
+                                                    reason:@"Use setAuthenticationStatus:withError:andReason: instead."
+                                                  userInfo: nil];
+   @throw exception;
+}
+
 - (id)init
 {
    NSString* appId = [Carrot sharedAppID];
@@ -133,23 +158,23 @@ static NSString* sCarrotDebugUDID = nil;
    return [self initWithAppId:appId
                     appSecret:nil
               urlSchemeSuffix:[Carrot sharedAppSchemeSuffix]
-                hostnameOrNil:nil
                debugUDIDOrNil:[Carrot debugUDID]];
 }
 
-- (id)initWithAppId:(NSString*)appId appSecret:(NSString*)appSecret urlSchemeSuffix:(NSString*)urlSchemeSuffix hostnameOrNil:(NSString*)hostnameOrNil debugUDIDOrNil:(NSString*)debugUDIDOrNil
+- (id)initWithAppId:(NSString*)appId appSecret:(NSString*)appSecret urlSchemeSuffix:(NSString*)urlSchemeSuffix debugUDIDOrNil:(NSString*)debugUDIDOrNil
 {
    self = [super init];
    if(self)
    {
       _authenticationStatus = CarrotAuthenticationStatusUndetermined;
       self.lastAuthStatusReported = _authenticationStatus;
-      self.hostname = (hostnameOrNil ? hostnameOrNil : kCarrotDefaultHostname);
+      _cachedSessionStatusReason = CarrotAuthenticationStatusReasonUnknown;
+
       self.appId = appId;
       self.appSecret = appSecret;
       self.udid = (debugUDIDOrNil == nil ? [CarrotOpenUDID value] : debugUDIDOrNil);
       self.urlSchemeSuffix = urlSchemeSuffix;
-      self.hostUrlScheme = kCarrotDefaultHostUrlScheme;
+      self.version = kCarrotSDKVersion;
 
       // Get data path
       NSArray* searchPaths = [[NSFileManager defaultManager] URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask];
@@ -166,6 +191,17 @@ static NSString* sCarrotDebugUDID = nil;
          return nil;
       }
 
+      // Create cache
+      self.cache = [CarrotCache cacheWithPath:self.dataPath];
+      if(!self.cache)
+      {
+         NSLog(@"Unable to create Carrot cache.");
+         return nil;
+      }
+
+      // Assign install date
+      _installDate = self.cache.installDate;
+
       self.requestThread = [[CarrotRequestThread alloc] initWithCarrot:self];
       if(!self.requestThread)
       {
@@ -173,17 +209,10 @@ static NSString* sCarrotDebugUDID = nil;
          return nil;
       }
 
-      // Start up Reachability monitor
-      self.reachability = [CarrotReachability reachabilityWithHostname:self.hostname];
-      self.reachability.reachableBlock = ^(CarrotReachability* reach)
-      {
-         [[Carrot sharedInstance] validateUser];
-      };
-      self.reachability.unreachableBlock = ^(CarrotReachability* reach)
-      {
-         self.authenticationStatus = CarrotAuthenticationStatusUndetermined;
-      };
-      [self.reachability startNotifier];
+      // Get bundle version information
+      NSBundle* mainBundle = [NSBundle mainBundle];
+      self.appVersion = [mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+      self.appBuild  = [mainBundle objectForInfoDictionaryKey:@"CFBundleVersion"];
    }
    return self;
 }
@@ -197,12 +226,8 @@ static NSString* sCarrotDebugUDID = nil;
    }
    self.requestThread = nil;
 
-   [self.reachability stopNotifier];
-   self.reachability = nil;
-
    self.dataPath = nil;
    self.accessToken = nil;
-   self.hostname = nil;
    self.appId = nil;
    self.udid = nil;
    self.appSecret = nil;
@@ -223,7 +248,7 @@ static NSString* sCarrotDebugUDID = nil;
 {
    _delegate = delegate;
    self.lastAuthStatusReported = CarrotAuthenticationStatusUndetermined;
-   [self setAuthenticationStatus:_authenticationStatus];
+   [self setAuthenticationStatus:_authenticationStatus withError:nil andReason:_authenticationStatusReason];
 }
 
 - (void)setAppSecret:(NSString*)appSecret
@@ -232,23 +257,14 @@ static NSString* sCarrotDebugUDID = nil;
 }
 
 - (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus
-{
-   [self setAuthenticationStatus:authenticationStatus withError:nil];
-}
-
-- (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus
-                      withError:(NSError*)error
+                      withError:(NSError*)error andReason:(CarrotAuthenticationStatusReason)reason;
 {
    @synchronized(self)
    {
-      _authenticationStatus = authenticationStatus;
-      if(_authenticationStatus == CarrotAuthenticationStatusReady)
+      if(authenticationStatus != _authenticationStatus)
       {
-         [self.requestThread start];
-      }
-      else
-      {
-         [self.requestThread stop];
+         _authenticationStatusReason = reason;
+         _authenticationStatus = authenticationStatus;
       }
    }
 
@@ -276,19 +292,28 @@ static NSString* sCarrotDebugUDID = nil;
       case 201:
       {
          // Everything is in order, we are online
-         self.authenticationStatus = CarrotAuthenticationStatusReady;
+         [self setAuthenticationStatus:CarrotAuthenticationStatusReady
+                             withError:nil
+                             andReason:self.cachedSessionStatusReason];
+
+         // Signal the request thread to wake up
+         [self.requestThread signal];
          break;
       }
       case 401: // Unauthorized
       {
          // The user has not allowed the 'publish_actions' permission.
-         self.authenticationStatus = CarrotAuthenticationStatusReadOnly;
+         [self setAuthenticationStatus:CarrotAuthenticationStatusReadOnly
+                             withError:nil
+                             andReason:self.cachedSessionStatusReason];
          break;
       }
       case 405: // Method Not Allowed
       {
          // The user has not authorized the application, or deauthorized the application.
-         self.authenticationStatus = CarrotAuthenticationStatusNotAuthorized;
+         [self setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized
+                             withError:nil
+                             andReason:self.cachedSessionStatusReason];
          break;
       }
       default:
@@ -371,6 +396,61 @@ static NSString* sCarrotDebugUDID = nil;
    return ret;
 }
 
+- (void)beginApplicationSession:(UIApplication*)application
+{
+   self.sessionStart = [NSDate date];
+}
+
+- (void)endApplicationSession:(UIApplication*)application
+{
+   self.sessionEnd = [NSDate date];
+
+   NSDictionary* payload = @{
+      @"start_time" : [NSNumber numberWithLongLong:(uint64_t)[self.sessionStart timeIntervalSince1970]],
+      @"end_time" : [NSNumber numberWithLongLong:(uint64_t)[self.sessionEnd timeIntervalSince1970]]
+   };
+
+   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      [self beginBackgroundTaskForApplication:application];
+      CarrotCachedRequest* cachedRequest =
+      [CarrotCachedRequest requestForService:CarrotRequestServiceMetrics
+                                  atEndpoint:@"/session.json"
+                                 withPayload:payload
+                                     inCache:self.cache];
+      [self.requestThread processRequest:cachedRequest];
+      [self endBackgroundTaskForApplication:application];
+   });
+}
+
+- (void)postPremiumCurrencyPurchase:(float)amount inCurrency:(NSString*)currency
+{
+   NSDictionary* payload = @{
+      @"amount" : [NSNumber numberWithFloat:amount],
+      @"currency" : currency
+   };
+   [self.requestThread addRequestForService:CarrotRequestServiceMetrics
+                                 atEndpoint:@"/purchase.json"
+                                usingMethod:CarrotRequestTypePOST
+                                withPayload:payload];
+}
+
+- (void)sendInstallMetricIfNeeded
+{
+   if(!self.cache.installMetricSent)
+   {
+      NSDictionary* payload = @{
+         @"install_date" : [NSNumber numberWithLongLong:(uint64_t)[self.installDate timeIntervalSince1970]]
+      };
+      if([self.requestThread addRequestForService:CarrotRequestServiceMetrics
+                                       atEndpoint:@"/install.json"
+                                      usingMethod:CarrotRequestTypePOST
+                                      withPayload:payload])
+      {
+         [self.cache markAppInstalled];
+      }
+   }
+}
+
 - (void)validateUser
 {
    if(!self.accessToken) return;
@@ -381,62 +461,39 @@ static NSString* sCarrotDebugUDID = nil;
       validateSema = dispatch_semaphore_create(1);
    });
 
-   NSString* urlString = [NSString stringWithFormat:@"%@://%@/games/%@/users.json", self.hostUrlScheme, self.hostname, self.appId];
-   NSMutableURLRequest* urlRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlString]];
-
-   NSString* postBody = [NSString stringWithFormat:@"api_key=%@&access_token=%@", self.udid, self.accessToken];
-
-   NSData* postData = [postBody dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
-   [urlRequest setHTTPMethod:CarrotRequestTypePOST];
-   [urlRequest setHTTPBody:postData];
-   [urlRequest setValue:[NSString stringWithFormat:@"%d", [postData length]]
-     forHTTPHeaderField:@"Content-Length"];
-   [urlRequest setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+   NSDictionary* payload = @{
+      @"api_key" : self.udid,
+      @"access_token" : self.accessToken
+   };
 
    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
       dispatch_semaphore_wait(validateSema, DISPATCH_TIME_FOREVER);
 
-      [NSURLConnection sendAsynchronousRequest:urlRequest
-                                         queue:[NSOperationQueue mainQueue]
-                             completionHandler:^(NSURLResponse* response, NSData* data, NSError* error)
-       {
-          NSHTTPURLResponse* httpResponse = response ? (NSHTTPURLResponse*)response : nil;
-          int httpCode = httpResponse.statusCode;
+      CarrotRequest* authRequest =
+      [CarrotRequest requestForService:CarrotRequestServiceAuth
+                            atEndpoint:[NSString stringWithFormat:@"/games/%@/users.json", self.appId]
+                           usingMethod:@"POST"
+                           withPayload:payload
+                              callback:^(NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread) {
+         int httpCode = response != nil ? response.statusCode : 401;
 
-          if(error)
-          {
-             switch(error.code)
-             {
-                // 401
-                case NSURLErrorUserCancelledAuthentication:
-                   error = nil;
-                   httpCode = 401;
-                   break;
+         if(httpCode == 404 || httpCode == 403)
+         {
+            // No such user || User has deauthorized game
+            [self setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized];
+         }
+         else if(![self updateAuthenticationStatus:httpCode])
+         {
+            NSError* error = nil;
+            NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+            NSLog(@"Unknown error adding Carrot user (%d): %@", response.statusCode,
+                  error ? error : jsonReply);
+            [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error andReason:CarrotAuthenticationStatusReasonUnknown];
+         }
 
-                default:
-                   NSLog(@"Unknown error adding Carrot user: %@", error);
-                   [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
-             }
-          }
-
-          if(error == nil)
-          {
-             if(httpCode == 404 || httpCode == 403)
-             {
-                // No such user || User has deauthorized game
-                [self setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized];
-             }
-             else if(error || ![self updateAuthenticationStatus:httpCode])
-             {
-                NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-                NSLog(@"Unknown error adding Carrot user (%d): %@", httpResponse.statusCode,
-                      error ? error : jsonReply);
-                [self setAuthenticationStatus:CarrotAuthenticationStatusUndetermined withError:error];
-             }
-          }
-
-          dispatch_semaphore_signal(validateSema);
-       }];
+         dispatch_semaphore_signal(validateSema);
+      }];
+      [self.requestThread addRequestInQueue:authRequest atFront:YES];
    });
 }
 
@@ -448,26 +505,29 @@ static NSString* sCarrotDebugUDID = nil;
                                     stringByReplacingOccurrencesOfString:@" " withString:@""];
    if(deviceTokenString)
    {
-      [self.requestThread addRequestForEndpoint:@"/me/devices.json"
-                                        usingMethod:CarrotRequestTypePOST
-                                    withPayload:@{@"device_type" : @"ios",
-                                                  @"push_key" : deviceTokenString}];
+      [self.requestThread addRequestForService:CarrotRequestServicePost
+                                    atEndpoint:@"/me/devices.json"
+                                   usingMethod:CarrotRequestTypePOST
+                                   withPayload:@{@"device_type" : @"ios",
+                                                 @"push_key" : deviceTokenString}];
    }
 }
 
 - (BOOL)postAchievement:(NSString*)achievementId
 {
-   return [self.requestThread addRequestForEndpoint:@"/me/achievements.json"
-                                        usingMethod:CarrotRequestTypePOST
-                                        withPayload:@{@"achievement_id" : achievementId}];
+   return [self.requestThread addRequestForService:CarrotRequestServicePost
+                                        atEndpoint:@"/me/achievements.json"
+                                       usingMethod:CarrotRequestTypePOST
+                                       withPayload:@{@"achievement_id" : achievementId}];
 }
 
 - (BOOL)postHighScore:(NSUInteger)score
 {
    NSDictionary* payload = @{@"value" : [NSNumber numberWithLong:score]};
-   return [self.requestThread addRequestForEndpoint:@"/me/scores.json"
-                                        usingMethod:CarrotRequestTypePOST
-                                        withPayload:payload];
+   return [self.requestThread addRequestForService:CarrotRequestServicePost
+                                        atEndpoint:@"/me/scores.json"
+                                       usingMethod:CarrotRequestTypePOST
+                                       withPayload:payload];
 }
 
 - (BOOL)postAction:(NSString*)actionId forObjectInstance:(NSString*)objectInstanceId
@@ -484,9 +544,10 @@ static NSString* sCarrotDebugUDID = nil;
       [payload setObject:actionProperties forKey:@"action_properties"];
    }
 
-   return [self.requestThread addRequestForEndpoint:@"/me/actions.json"
-                                        usingMethod:CarrotRequestTypePOST
-                                        withPayload:payload];
+   return [self.requestThread addRequestForService:CarrotRequestServicePost
+                                        atEndpoint:@"/me/actions.json"
+                                       usingMethod:CarrotRequestTypePOST
+                                       withPayload:payload];
 }
 
 - (BOOL)postAction:(NSString*)actionId creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties
@@ -537,39 +598,57 @@ static NSString* sCarrotDebugUDID = nil;
       [payload setObject:actionProperties forKey:@"action_properties"];
    }
 
-   return [self.requestThread addRequestForEndpoint:@"/me/actions.json"
-                                        usingMethod:CarrotRequestTypePOST
-                                        withPayload:payload];
+   return [self.requestThread addRequestForService:CarrotRequestServicePost
+                                        atEndpoint:@"/me/actions.json"
+                                       usingMethod:CarrotRequestTypePOST
+                                       withPayload:payload];
 }
 
 -(BOOL)likeGame
 {
-   return [self.requestThread addRequestForEndpoint:@"/me/like.json"
-                                        usingMethod:CarrotRequestTypePOST
-                                        withPayload:@{@"object" : @"game"}];
+   return [self.requestThread addRequestForService:CarrotRequestServicePost
+                                        atEndpoint:@"/me/like.json"
+                                       usingMethod:CarrotRequestTypePOST
+                                       withPayload:@{@"object" : @"game"}];
 }
 
 -(BOOL)likePublisher
 {
-   return [self.requestThread addRequestForEndpoint:@"/me/like.json"
-                                        usingMethod:CarrotRequestTypePOST
-                                        withPayload:@{@"object" : @"publisher"}];
+   return [self.requestThread addRequestForService:CarrotRequestServicePost
+                                        atEndpoint:@"/me/like.json"
+                                       usingMethod:CarrotRequestTypePOST
+                                       withPayload:@{@"object" : @"publisher"}];
 }
 
 -(BOOL)likeAchievement:(NSString*)achievementId;
 {
    NSString* likeObject = [NSString stringWithFormat:@"achievement:%@", achievementId];
-   return [self.requestThread addRequestForEndpoint:@"/me/like.json"
-                                        usingMethod:CarrotRequestTypePOST
-                                        withPayload:@{@"object" : likeObject}];
+   return [self.requestThread addRequestForService:CarrotRequestServicePost
+                                        atEndpoint:@"/me/like.json"
+                                       usingMethod:CarrotRequestTypePOST
+                                       withPayload:@{@"object" : likeObject}];
 }
 
 -(BOOL)likeObject:(NSString*)objectInstanceId
 {
    NSString* likeObject = [NSString stringWithFormat:@"object:%@", objectInstanceId];
-   return [self.requestThread addRequestForEndpoint:@"/me/like.json"
-                                        usingMethod:CarrotRequestTypePOST
-                                        withPayload:@{@"object" : likeObject}];
+   return [self.requestThread addRequestForService:CarrotRequestServicePost
+                                        atEndpoint:@"/me/like.json"
+                                       usingMethod:CarrotRequestTypePOST
+                                       withPayload:@{@"object" : likeObject}];
+}
+
+- (void)beginBackgroundTaskForApplication:(UIApplication*)application
+{
+   self.backgroundTask = [application beginBackgroundTaskWithExpirationHandler:^{
+      [self endBackgroundTaskForApplication:application];
+   }];
+}
+
+- (void)endBackgroundTaskForApplication:(UIApplication*)application
+{
+   [application endBackgroundTask: self.backgroundTask];
+   self.backgroundTask = UIBackgroundTaskInvalid;
 }
 
 @end

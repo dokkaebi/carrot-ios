@@ -14,22 +14,30 @@
  */
 
 #import <Carrot/Carrot.h>
+#import "CarrotRequestThread.h"
 
 @interface Carrot ()
 
 @property (strong, nonatomic) NSString* appId;
-@property (nonatomic, readwrite, setter=setAuthenticationStatus:) CarrotAuthenticationStatus authenticationStatus;
 @property (strong, nonatomic) NSString* dataPath;
-@property (strong, nonatomic) NSString* hostname;
 @property (strong, nonatomic) NSString* udid;
 @property (strong, nonatomic) NSString* appSecret;
 @property (strong, nonatomic) NSString* urlSchemeSuffix;
 @property (strong, nonatomic, readwrite) NSDictionary* facebookUser;
 @property (strong, nonatomic, readwrite) NSString* accessToken;
-@property (strong, nonatomic) NSString* hostUrlScheme;
+@property (strong, nonatomic) NSDate* sessionStart;
+@property (strong, nonatomic) NSDate* sessionEnd;
+@property (strong, nonatomic) NSString* appVersion;
+@property (strong, nonatomic) NSString* appBuild;
+@property (nonatomic) UIBackgroundTaskIdentifier backgroundTask;
+@property (nonatomic) CarrotAuthenticationStatusReason cachedSessionStatusReason;
+@property (strong, nonatomic) CarrotRequestThread* requestThread;
+@property (strong, nonatomic) CarrotCache* cache;
 
-- (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus withError:(NSError*)error;
+- (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus withError:(NSError*)error andReason:(CarrotAuthenticationStatusReason)reason;
+
 - (BOOL)updateAuthenticationStatus:(int)httpCode;
+- (void)validateUser;
 
 + (NSString*)sharedAppID;
 + (NSString*)sharedAppSchemeSuffix;

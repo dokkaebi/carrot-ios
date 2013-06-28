@@ -32,7 +32,20 @@ typedef enum CarrotAuthenticationStatus {
                                                        and Carrot can make Open Graph posts. */
 } CarrotAuthenticationStatus;
 
+typedef enum CarrotAuthenticationStatusReason {
+   CarrotAuthenticationStatusReasonUserRemovedApp = -4,
+   CarrotAuthenticationStatusReasonUserDeniedPermissions = -3,
+   CarrotAuthenticationStatusReasonSessionExpired = -2,
+   CarrotAuthenticationStatusReasonAppDisabledInSettings = -1,
+   CarrotAuthenticationStatusReasonUnknown = 0,
+   CarrotAuthenticationStatusReasonUnknownShowUser = 1,
+   CarrotAuthenticationStatusReasonSessionExists = 2,
+   CarrotAuthenticationStatusReasonNewSession = 3
+} CarrotAuthenticationStatusReason;
+
 #ifdef __OBJC__
+
+#import <UIKit/UIKit.h>
 
 /**
  * Block type for the completion of Carrot requests.
@@ -153,9 +166,14 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
 + (void)plant:(NSString*)appID inApplication:(Class)appDelegateClass urlSchemeSuffix:(NSString*)urlSchemeSuffix withSecret:(NSString*)appSecret;
 
 /**
- * The authentication status for the current user.
+ * The authentication status of the current user.
  */
 @property (nonatomic, readonly) CarrotAuthenticationStatus authenticationStatus;
+
+/**
+ * The reason for the authentication status of the current user.
+ */
+@property (nonatomic, readonly) CarrotAuthenticationStatusReason authenticationStatusReason;
 
 /**
  * CarrotDelegate which recieves action notifications.
@@ -171,6 +189,24 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
  * The Facebook user access token of the current user, or nil.
  */
 @property (strong, nonatomic, readonly) NSString* accessToken;
+
+/**
+ * The version string for the Carrot SDK
+ */
+@property (strong, nonatomic, readonly) NSString* version;
+
+/**
+ * An app-specified tag for associating metrics with A/B testing groups or
+ * other purposes.
+ *
+ * @note This should be assigned as soon as possible after app launch.
+ */
+@property (strong, nonatomic) NSString* appTag;
+
+/**
+ * The date of install for this app, on this device.
+ */
+@property (strong, nonatomic, readonly) NSDate* installDate;
 
 /**
  * Carrot singleton.
@@ -302,6 +338,39 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
  * @param deviceToken   Push notification device token.
  */
 - (void)setDevicePushToken:(NSData*)deviceToken;
+
+/**
+ * Tell Carrot to start tracking session length.
+ *
+ * @note You can allow Carrot to perform this for you by using plantInApplication:withSecret:
+ *
+ * @param application    UIApplication for the session which is starting.
+ */
+- (void)beginApplicationSession:(UIApplication*)application;
+
+/**
+ * Tell Carrot to stop tracking session length.
+ *
+ * @note You can allow Carrot to perform this for you by using plantInApplication:withSecret:
+ *
+ * @param application    UIApplication for the session which is ending.
+ */
+- (void)endApplicationSession:(UIApplication*)application;
+
+/**
+ * Tell Carrot to send the install date metric if it hasn't already been sent.
+ *
+ * @note You can allow Carrot to perform this for you by using plantInApplication:withSecret:
+ */
+- (void)sendInstallMetricIfNeeded;
+
+/**
+ * Inform Carrot about a purchase of premium currency for metrics tracking.
+ *
+ * @param amount     The amount of real money spent.
+ * @param currency   The type of real money spent (eg. USD).
+ */
+- (void)postPremiumCurrencyPurchase:(float)amount inCurrency:(NSString*)currency;
 
 /**
  * Post an achievement to the Carrot service.
