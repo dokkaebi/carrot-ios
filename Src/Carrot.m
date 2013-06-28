@@ -15,7 +15,6 @@
 
 #import <Carrot/Carrot.h>
 #import "Carrot+Internal.h"
-#import "CarrotRequestThread.h"
 #import "CarrotCachedRequest.h"
 #import "OpenUDID.h"
 #import "Reachability.h"
@@ -29,7 +28,6 @@ extern NSString* URLEscapedString(NSString* inString);
 
 @interface Carrot ()
 
-@property (strong, nonatomic) CarrotRequestThread* requestThread;
 @property (nonatomic) CarrotAuthenticationStatus lastAuthStatusReported;
 @property (nonatomic, readwrite, setter=setAuthenticationStatus:) CarrotAuthenticationStatus authenticationStatus;
 @property (nonatomic, readwrite, setter=setAuthenticationStatusReason:) CarrotAuthenticationStatusReason authenticationStatusReason;

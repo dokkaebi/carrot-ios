@@ -14,6 +14,7 @@
  */
 
 #import <Carrot/Carrot.h>
+#import "CarrotRequestThread.h"
 
 @interface Carrot ()
 
@@ -30,6 +31,7 @@
 @property (strong, nonatomic) NSString* appBuild;
 @property (nonatomic) UIBackgroundTaskIdentifier backgroundTask;
 @property (nonatomic) CarrotAuthenticationStatusReason cachedSessionStatusReason;
+@property (strong, nonatomic) CarrotRequestThread* requestThread;
 
 - (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus withError:(NSError*)error andReason:(CarrotAuthenticationStatusReason)reason;
 

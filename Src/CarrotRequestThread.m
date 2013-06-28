@@ -37,6 +37,7 @@
 @property (strong, nonatomic) NSString* metricsHostname;
 @property (strong, nonatomic) NSString* authHostname;
 @property (strong, nonatomic) CarrotReachability* reachability;
+@property (strong, nonatomic) NSDate* lastDiscoveryDate;
 
 @end
 
@@ -57,6 +58,7 @@ NSString* URLEscapedString(NSString* inString)
       self.carrot = carrot;
       self.maxRetryCount = 0; // Infinite retries by default
       self.requestQueuePause = [[NSCondition alloc] init];
+      self.lastDiscoveryDate = nil;
       _isRunning = NO;
 
       // Init sqlite
@@ -77,44 +79,7 @@ NSString* URLEscapedString(NSString* inString)
       self.reachability = [CarrotReachability reachabilityWithHostname:kCarrotServicesHostname];
       self.reachability.reachableBlock = ^(CarrotReachability* reach)
       {
-         // Do services discovery
-         NSString* urlString = [NSString stringWithFormat:@"http://%@/services.json?sdk_version=%@&sdk_platform=%@&game_id=%@&app_version=%@&app_build=%@",
-                                kCarrotServicesHostname,
-                                URLEscapedString(weakSelf.carrot.version),
-                                URLEscapedString([NSString stringWithFormat:@"ios_%@",[[UIDevice currentDevice] systemVersion]]),
-                                URLEscapedString(weakSelf.carrot.appId),
-                                URLEscapedString(weakSelf.carrot.appVersion),
-                                URLEscapedString(weakSelf.carrot.appBuild)];
-         NSURLRequest* request = [NSURLRequest requestWithURL:[NSURL URLWithString:urlString]
-                                                  cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
-                                              timeoutInterval:120];
-         [NSURLConnection sendAsynchronousRequest:request
-                                            queue:[NSOperationQueue mainQueue]
-                                completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
-            if(error)
-            {
-               NSLog(@"Unable to perform services discovery for Carrot. Carrot is in offline mode.\n%@", error);
-            }
-            else
-            {
-               NSDictionary* services = [NSJSONSerialization JSONObjectWithData:data
-                                                                        options:kNilOptions
-                                                                          error:&error];
-               if(error)
-               {
-                  NSLog(@"Unable to perform services discovery for Carrot. Carrot is in offline mode.\n%@", error);
-               }
-               else
-               {
-                  weakSelf.postHostname = [services objectForKey:@"post"];
-                  weakSelf.authHostname = [services objectForKey:@"auth"];
-                  weakSelf.metricsHostname = [services objectForKey:@"metrics"];
-
-                  [weakSelf start];
-                  [weakSelf.carrot validateUser];
-               }
-            }
-         }];
+         [weakSelf performDiscovery];
       };
       self.reachability.unreachableBlock = ^(CarrotReachability* reach)
       {
@@ -134,6 +99,55 @@ NSString* URLEscapedString(NSString* inString)
 
    sqlite3_close(_sqliteDb);
    _sqliteDb = nil;
+}
+
+- (void)performDiscovery
+{
+   NSDate* nextDiscoveryDate = [self.lastDiscoveryDate dateByAddingTimeInterval: 24 * 60 * 60];
+   if(self.lastDiscoveryDate != nil &&
+      ([self.lastDiscoveryDate compare:nextDiscoveryDate] == NSOrderedAscending))
+   {
+      return;
+   }
+   self.lastDiscoveryDate = [NSDate date];
+
+   NSString* urlString = [NSString stringWithFormat:@"http://%@/services.json?sdk_version=%@&sdk_platform=%@&game_id=%@&app_version=%@&app_build=%@",
+                          kCarrotServicesHostname,
+                          URLEscapedString(self.carrot.version),
+                          URLEscapedString([NSString stringWithFormat:@"ios_%@",[[UIDevice currentDevice] systemVersion]]),
+                          URLEscapedString(self.carrot.appId),
+                          URLEscapedString(self.carrot.appVersion),
+                          URLEscapedString(self.carrot.appBuild)];
+   NSURLRequest* request = [NSURLRequest requestWithURL:[NSURL URLWithString:urlString]
+                                            cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
+                                        timeoutInterval:120];
+   [NSURLConnection sendAsynchronousRequest:request
+                                      queue:[NSOperationQueue mainQueue]
+                          completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
+      if(error)
+      {
+        NSLog(@"Unable to perform services discovery for Carrot. Carrot is in offline mode.\n%@", error);
+      }
+      else
+      {
+        NSDictionary* services = [NSJSONSerialization JSONObjectWithData:data
+                                                                 options:kNilOptions
+                                                                   error:&error];
+        if(error)
+        {
+           NSLog(@"Unable to perform services discovery for Carrot. Carrot is in offline mode.\n%@", error);
+        }
+        else
+        {
+           self.postHostname = [services objectForKey:@"post"];
+           self.authHostname = [services objectForKey:@"auth"];
+           self.metricsHostname = [services objectForKey:@"metrics"];
+
+           [self start];
+           [self.carrot validateUser];
+        }
+      }
+   }];
 }
 
 - (void)start

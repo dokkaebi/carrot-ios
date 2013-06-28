@@ -15,6 +15,7 @@
 
 #import <Carrot/Carrot.h>
 #import <objc/runtime.h>
+#import "Carrot+Internal.h"
 
 extern void Carrot_HandleApplicationDidBecomeActive();
 
@@ -107,6 +108,7 @@ void Carrot_Plant(Class appDelegateClass, NSString* appSecret)
 
 - (void)applicationDidBecomeActive:(UIApplication*)application
 {
+   [[Carrot sharedInstance].requestThread performDiscovery];
    [[Carrot sharedInstance] beginApplicationSession:application];
    Carrot_HandleApplicationDidBecomeActive();
    if(sHostDBAIMP)
