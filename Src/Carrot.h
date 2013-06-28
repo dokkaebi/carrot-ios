@@ -358,6 +358,13 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
 - (void)endApplicationSession:(UIApplication*)application;
 
 /**
+ * Tell Carrot to send the install date metric if it hasn't already been sent.
+ *
+ * @note You can allow Carrot to perform this for you by using plantInApplication:withSecret:
+ */
+- (void)sendInstallMetricIfNeeded;
+
+/**
  * Inform Carrot about a purchase of premium currency for metrics tracking.
  *
  * @param amount     The amount of real money spent.

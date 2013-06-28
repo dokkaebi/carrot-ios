@@ -109,6 +109,7 @@ void Carrot_Plant(Class appDelegateClass, NSString* appSecret)
 - (void)applicationDidBecomeActive:(UIApplication*)application
 {
    [[Carrot sharedInstance].requestThread performDiscovery];
+   [[Carrot sharedInstance] sendInstallMetricIfNeeded];
    [[Carrot sharedInstance] beginApplicationSession:application];
    Carrot_HandleApplicationDidBecomeActive();
    if(sHostDBAIMP)

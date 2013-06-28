@@ -27,7 +27,10 @@
 
 + (NSArray*)requestsInCache:(sqlite3*)cache forAuthStatus:(CarrotAuthenticationStatus)authStatus;
 + (BOOL)prepareCache:(sqlite3*)cache;
+
 + (NSDate*)installDate;
++ (BOOL)installMetricSent;
++ (void)markInstallMetricSentInCache:(sqlite3*)cache;
 
 - (BOOL)removeFromCache:(sqlite3*)cache;
 - (BOOL)addRetryInCache:(sqlite3*)cache;

@@ -427,6 +427,21 @@ static NSString* sCarrotDebugUDID = nil;
                                 withPayload:payload];
 }
 
+- (void)sendInstallMetricIfNeeded
+{
+   if(![CarrotCachedRequest installMetricSent])
+   {
+      NSDictionary* payload = @{
+         @"install_date" : [NSNumber numberWithLongLong:(uint64_t)[self.installDate timeIntervalSince1970]]
+      };
+      [self.requestThread addRequestForService:CarrotRequestServiceMetrics
+                                    atEndpoint:@"/install.json"
+                                   usingMethod:CarrotRequestTypePOST
+                                   withPayload:payload];
+      [CarrotCachedRequest markInstallMetricSentInCache:self.requestThread.sqliteDb];
+   }
+}
+
 - (void)validateUser
 {
    if(!self.accessToken) return;

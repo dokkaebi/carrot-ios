@@ -38,9 +38,10 @@
 #define kCacheDeleteSQL "DELETE FROM cache WHERE rowid=%lld"
 
 // Install tracking
-#define kInstallTableCreateSQL "CREATE TABLE IF NOT EXISTS install_tracking(install_date REAL)"
-#define kInstallTableReadSQL "SELECT MAX(install_date) FROM install_tracking"
-#define kInstallTableUpdateSQL "INSERT INTO install_tracking (install_date) VALUES (%f)"
+#define kInstallTableCreateSQL "CREATE TABLE IF NOT EXISTS install_tracking(install_date REAL, metric_sent INTEGER)"
+#define kInstallTableReadSQL "SELECT MAX(install_date), metric_sent FROM install_tracking"
+#define kInstallTableUpdateSQL "INSERT INTO install_tracking (install_date, metric_sent) VALUES (%f, 0)"
+#define kInstallTableMetricSentSQL "UPDATE install_tracking SET metric_sent=1"
 
 @interface CarrotCachedRequest ()
 
@@ -82,17 +83,27 @@ static BOOL carrotcache_commit(sqlite3* cache)
    return YES;
 }
 
-static NSDate* sInstallDate = nil;
-
 #define CARROTCACHE_ROLLBACK_FAIL(test, cache) if(!(test)){ carrotcache_rollback(cache); return NO; }
 
 @implementation CarrotCachedRequest
+
+static NSDate* sInstallDate = nil;
+static BOOL sInstallMetricSent = NO;
 
 + (NSDate*)installDate
 {
    return sInstallDate;
 }
 
++ (BOOL)installMetricSent
+{
+   return sInstallMetricSent;
+}
+
++ (void)markInstallMetricSentInCache:(sqlite3*)cache
+{
+   sqlite3_exec(cache, kInstallTableMetricSentSQL, 0, 0, 0);
+}
 
 + (BOOL)prepareCache:(sqlite3*)cache
 {
@@ -213,15 +224,16 @@ static NSDate* sInstallDate = nil;
       CARROTCACHE_ROLLBACK_FAIL(ret && carrotcache_commit(cache), cache);
    }
 
-   // Must occur last, install-tracking table/request
    if(sqlite3_exec(cache, kInstallTableCreateSQL, 0, 0, 0) == SQLITE_OK)
    {
+      sqlite3_stmt* sqlStatement;
       double cachedInstallDate = 0.0;
       if(sqlite3_prepare_v2(cache, kInstallTableReadSQL, -1, &sqlStatement, NULL) == SQLITE_OK)
       {
          while(sqlite3_step(sqlStatement) == SQLITE_ROW)
          {
             cachedInstallDate = sqlite3_column_double(sqlStatement, 0);
+            sInstallMetricSent = sqlite3_column_int(sqlStatement, 1);
          }
       }
       sqlite3_finalize(sqlStatement);
@@ -233,15 +245,9 @@ static NSDate* sInstallDate = nil;
       else
       {
          sInstallDate = [NSDate date];
+
          char* sqlString = sqlite3_mprintf(kInstallTableUpdateSQL, [sInstallDate timeIntervalSince1970]);
-         if(sqlite3_prepare_v2(cache, sqlString, -1, &sqlStatement, NULL) == SQLITE_OK)
-         {
-            if(sqlite3_step(sqlStatement) != SQLITE_DONE)
-            {
-               // Ship out cached request
-            }
-         }
-         sqlite3_finalize(sqlStatement);
+         sqlite3_exec(cache, sqlString, 0, 0, 0);
          sqlite3_free(sqlString);
       }
    }
