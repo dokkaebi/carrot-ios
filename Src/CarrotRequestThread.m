@@ -29,7 +29,7 @@
 
 @property (strong, nonatomic) NSMutableArray* internalRequestQueue;
 @property (weak, nonatomic, readwrite) NSArray* requestQueue;
-@property (nonatomic, readwrite) sqlite3* sqliteDb;
+@property (strong, nonatomic, readwrite) CarrotCache* cache;
 @property (assign, nonatomic) Carrot* carrot;
 @property (nonatomic) BOOL keepThreadRunning;
 @property (strong, nonatomic) NSCondition* requestQueuePause;
@@ -59,20 +59,8 @@ NSString* URLEscapedString(NSString* inString)
       self.maxRetryCount = 0; // Infinite retries by default
       self.requestQueuePause = [[NSCondition alloc] init];
       self.lastDiscoveryDate = nil;
+      self.cache = carrot.cache;
       _isRunning = NO;
-
-      // Init sqlite
-      int sql3Err = sqlite3_open([[carrot.dataPath stringByAppendingPathComponent:@"RequestQueue.db"] UTF8String], &_sqliteDb);
-      if(sql3Err != SQLITE_OK)
-      {
-         NSLog(@"Error creating Carrot data store at: %@", carrot.dataPath);
-         return nil;
-      }
-
-      if(![CarrotCachedRequest prepareCache:self.sqliteDb])
-      {
-         return nil;
-      }
 
       // Start up Reachability monitor
       __weak typeof(self) weakSelf = self;
@@ -96,9 +84,6 @@ NSString* URLEscapedString(NSString* inString)
    self.reachability = nil;
 
    self.internalRequestQueue = nil;
-
-   sqlite3_close(_sqliteDb);
-   _sqliteDb = nil;
 }
 
 - (void)performDiscovery
@@ -220,8 +205,7 @@ NSString* URLEscapedString(NSString* inString)
       [CarrotCachedRequest requestForService:serviceType
                                   atEndpoint:endpoint
                                  withPayload:payload
-                                     inCache:self.sqliteDb
-                       synchronizingOnObject:self.requestQueue];
+                                     inCache:self.cache];
 
       if(cachedRequest)
       {
@@ -260,7 +244,8 @@ NSString* URLEscapedString(NSString* inString)
    BOOL ret = NO;
    @synchronized(self.requestQueue)
    {
-      NSArray* cachedRequests = [CarrotCachedRequest requestsInCache:self.sqliteDb forAuthStatus:self.carrot.authenticationStatus];
+      NSArray* cachedRequests = [self.cache
+                                 cachedRequestsForAuthStatus:self.carrot.authenticationStatus];
       [self.internalRequestQueue addObjectsFromArray:cachedRequests];
    }
    return ret;

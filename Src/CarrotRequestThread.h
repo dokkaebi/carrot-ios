@@ -14,8 +14,8 @@
  */
 
 #import <Foundation/Foundation.h>
+#import "CarrotCache.h"
 #import "CarrotRequest.h"
-#include <sqlite3.h>
 
 @class Carrot;
 
@@ -23,7 +23,7 @@
 
 @property (nonatomic, readonly) BOOL isRunning;
 @property (nonatomic) NSUInteger maxRetryCount; // 0 = infinite
-@property (nonatomic, readonly) sqlite3* sqliteDb;
+@property (strong, nonatomic, readonly) CarrotCache* cache;
 @property (weak, nonatomic, readonly) NSArray* requestQueue;
 
 - (id)initWithCarrot:(Carrot*)carrot;

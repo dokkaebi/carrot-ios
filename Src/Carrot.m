@@ -191,15 +191,23 @@ static NSString* sCarrotDebugUDID = nil;
          return nil;
       }
 
+      // Create cache
+      self.cache = [CarrotCache cacheWithPath:self.dataPath];
+      if(!self.cache)
+      {
+         NSLog(@"Unable to create Carrot cache.");
+         return nil;
+      }
+
+      // Assign install date
+      _installDate = self.cache.installDate;
+
       self.requestThread = [[CarrotRequestThread alloc] initWithCarrot:self];
       if(!self.requestThread)
       {
          NSLog(@"Unable to create Carrot request thread.");
          return nil;
       }
-
-      // Assign install date
-      _installDate = [CarrotCachedRequest installDate];
 
       // Get bundle version information
       NSBundle* mainBundle = [NSBundle mainBundle];
@@ -408,8 +416,7 @@ static NSString* sCarrotDebugUDID = nil;
       [CarrotCachedRequest requestForService:CarrotRequestServiceMetrics
                                   atEndpoint:@"/session.json"
                                  withPayload:payload
-                                     inCache:self.requestThread.sqliteDb
-                       synchronizingOnObject:self.requestThread.requestQueue];
+                                     inCache:self.cache];
       [self.requestThread processRequest:cachedRequest];
       [self endBackgroundTaskForApplication:application];
    });
@@ -429,16 +436,18 @@ static NSString* sCarrotDebugUDID = nil;
 
 - (void)sendInstallMetricIfNeeded
 {
-   if(![CarrotCachedRequest installMetricSent])
+   if(!self.cache.installMetricSent)
    {
       NSDictionary* payload = @{
          @"install_date" : [NSNumber numberWithLongLong:(uint64_t)[self.installDate timeIntervalSince1970]]
       };
-      [self.requestThread addRequestForService:CarrotRequestServiceMetrics
-                                    atEndpoint:@"/install.json"
-                                   usingMethod:CarrotRequestTypePOST
-                                   withPayload:payload];
-      [CarrotCachedRequest markInstallMetricSentInCache:self.requestThread.sqliteDb];
+      if([self.requestThread addRequestForService:CarrotRequestServiceMetrics
+                                       atEndpoint:@"/install.json"
+                                      usingMethod:CarrotRequestTypePOST
+                                      withPayload:payload])
+      {
+         [self.cache markAppInstalled];
+      }
    }
 }
 

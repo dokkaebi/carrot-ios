@@ -32,6 +32,7 @@
 @property (nonatomic) UIBackgroundTaskIdentifier backgroundTask;
 @property (nonatomic) CarrotAuthenticationStatusReason cachedSessionStatusReason;
 @property (strong, nonatomic) CarrotRequestThread* requestThread;
+@property (strong, nonatomic) CarrotCache* cache;
 
 - (void)setAuthenticationStatus:(CarrotAuthenticationStatus)authenticationStatus withError:(NSError*)error andReason:(CarrotAuthenticationStatusReason)reason;
 

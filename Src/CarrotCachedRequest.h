@@ -15,25 +15,17 @@
 
 #import <Foundation/Foundation.h>
 #import "CarrotRequest.h"
-#include <sqlite3.h>
+#import "CarrotCache.h"
 
 @interface CarrotCachedRequest : CarrotRequest
 
 @property (strong, nonatomic, readonly) NSString* requestId;
 @property (strong, nonatomic, readonly) NSDate* dateIssued;
 @property (nonatomic, readonly) NSUInteger retryCount;
+@property (nonatomic, readonly) sqlite3_uint64 cacheId;
 
-+ (id)requestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint withPayload:(NSDictionary*)payload inCache:(sqlite3*)cache synchronizingOnObject:(id)synchObject;
-
-+ (NSArray*)requestsInCache:(sqlite3*)cache forAuthStatus:(CarrotAuthenticationStatus)authStatus;
-+ (BOOL)prepareCache:(sqlite3*)cache;
-
-+ (NSDate*)installDate;
-+ (BOOL)installMetricSent;
-+ (void)markInstallMetricSentInCache:(sqlite3*)cache;
-
-- (BOOL)removeFromCache:(sqlite3*)cache;
-- (BOOL)addRetryInCache:(sqlite3*)cache;
++ (id)requestForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint withPayload:(NSDictionary*)payload inCache:(CarrotCache*)cache;
+- (id)initForService:(CarrotRequestServiceType)serviceType atEndpoint:(NSString*)endpoint payload:(NSDictionary*)payload requestId:(NSString*)requestId dateIssued:(NSDate*)dateIssued cacheId:(sqlite3_uint64)cacheId retryCount:(NSUInteger)retryCount;
 
 - (NSString*)description;
 
