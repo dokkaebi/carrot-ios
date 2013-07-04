@@ -87,7 +87,26 @@
    NSError* error = nil;
    NSDictionary* jsonReply = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
    int httpCode = response != nil ? response.statusCode : 401;
-   if(httpCode == 404)
+
+   if(self.serviceType == CarrotRequestServiceMetrics)
+   {
+      switch(httpCode)
+      {
+         case 200:
+         case 201:
+         {
+            [requestThread.cache removeRequestFromCache:self];
+         }
+         break;
+
+         default:
+         {
+            [requestThread.cache addRetryInCacheForRequest:self];
+         }
+         break;
+      }
+   }
+   else if(httpCode == 404)
    {
       NSLog(@"Carrot resource not found, removing request from cache.");
       [requestThread.cache removeRequestFromCache:self];
