@@ -213,6 +213,16 @@ static NSString* sCarrotDebugUDID = nil;
       NSBundle* mainBundle = [NSBundle mainBundle];
       self.appVersion = [mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
       self.appBuild  = [mainBundle objectForInfoDictionaryKey:@"CFBundleVersion"];
+
+      // Check/warn if the app is set to exit in the background
+      BOOL appExitsOnSuspend = NO;
+      id temp = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UIApplicationExitsOnSuspend"];
+      if(temp != nil && [temp respondsToSelector:@selector(boolValue)])
+         appExitsOnSuspend = [temp boolValue];
+      if(appExitsOnSuspend)
+      {
+         NSLog(@"WARNING: Your application exits when it enters the background. This will prevent Carrot from tracking session times in your application. To change this, alter the 'UIApplicationExitsOnSuspend' key in your plist file in Xcode.");
+      }
    }
    return self;
 }
