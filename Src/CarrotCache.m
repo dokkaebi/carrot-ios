@@ -89,6 +89,7 @@ static BOOL carrotcache_commit(sqlite3* cache);
 - (void)markAppInstalled
 {
    sqlite3_exec(self.sqliteDb, kInstallTableMetricSentSQL, 0, 0, 0);
+   self.installMetricSent = YES;
 }
 
 - (sqlite_uint64)cacheRequest:(CarrotCachedRequest*)request
