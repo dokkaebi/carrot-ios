@@ -124,9 +124,9 @@ NSString* URLEscapedString(NSString* inString)
         }
         else
         {
-           self.postHostname = [services objectForKey:@"post"];
-           self.authHostname = [services objectForKey:@"auth"];
-           self.metricsHostname = [services objectForKey:@"metrics"];
+           self.postHostname = [services objectForKey:@"post"] == [NSNull null] ? nil : [services objectForKey:@"post"];
+           self.authHostname = [services objectForKey:@"auth"] == [NSNull null] ? nil : [services objectForKey:@"auth"];
+           self.metricsHostname = [services objectForKey:@"metrics"] == [NSNull null] ? nil : [services objectForKey:@"metrics"];
 
            [self start];
            [self.carrot validateUser];
