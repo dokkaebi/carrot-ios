@@ -320,7 +320,7 @@ NSString* URLEscapedString(NSString* inString)
          [value isKindOfClass:[NSArray class]])
       {
          NSError* error = nil;
-         
+
          NSData* jsonData = [NSJSONSerialization dataWithJSONObject:value options:0 error:&error];
          if(error)
          {
@@ -373,7 +373,7 @@ NSString* URLEscapedString(NSString* inString)
             [self loadQueueFromCache];
 
             // If queue is still empty, wait until it's not empty.
-            while([self.requestQueue count] < 1 && self.keepThreadRunning) {
+            while(self.requestQueue.count < 1 && self.keepThreadRunning) {
                [self.requestQueuePause wait];
             }
             [self.requestQueuePause unlock];
