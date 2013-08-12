@@ -351,19 +351,16 @@ NSString* URLEscapedString(NSString* inString)
 
          @synchronized(self.requestQueue)
          {
-            request = (self.requestQueue.count > 0 ?
-                       [self.requestQueue objectAtIndex:0] : nil);
+            if(self.requestQueue.count > 0)
+            {
+               request = [self.requestQueue objectAtIndex:0];
+               [self.requestQueue removeObjectAtIndex:0];
+            }
          }
 
          if(request)
          {
             [self processRequest:request];
-
-            @synchronized(self.requestQueue)
-            {
-               [self.requestQueue removeObjectAtIndex:0];
-               request = nil;
-            }
          }
          else
          {
