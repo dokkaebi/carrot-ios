@@ -348,38 +348,35 @@ NSString* URLEscapedString(NSString* inString)
    {
       while(self.keepThreadRunning)
       {
-         if(self.carrot.appSecret)
+         CarrotCachedRequest* request = nil;
+
+         @synchronized(self.requestQueue)
          {
-            CarrotCachedRequest* request = nil;
+            request = (self.requestQueue.count > 0 ?
+                       [self.requestQueue objectAtIndex:0] : nil);
+         }
+
+         if(request)
+         {
+            [self processRequest:request];
 
             @synchronized(self.requestQueue)
             {
-               request = (self.requestQueue.count > 0 ?
-                          [self.requestQueue objectAtIndex:0] : nil);
+               [self.internalRequestQueue removeObjectAtIndex:0];
             }
+         }
+         else
+         {
+            [self.requestQueuePause lock];
 
-            if(request)
-            {
-               [self processRequest:request];
+            // Populate cache
+            [self loadQueueFromCache];
 
-               @synchronized(self.requestQueue)
-               {
-                  [self.internalRequestQueue removeObjectAtIndex:0];
-               }
+            // If queue is still empty, wait until it's not empty.
+            while([self.internalRequestQueue count] < 1 && self.keepThreadRunning) {
+               [self.requestQueuePause wait];
             }
-            else
-            {
-               [self.requestQueuePause lock];
-
-               // Populate cache
-               [self loadQueueFromCache];
-
-               // If queue is still empty, wait until it's not empty.
-               while([self.internalRequestQueue count] < 1 && self.keepThreadRunning) {
-                  [self.requestQueuePause wait];
-               }
-               [self.requestQueuePause unlock];
-            }
+            [self.requestQueuePause unlock];
          }
       }
    }
