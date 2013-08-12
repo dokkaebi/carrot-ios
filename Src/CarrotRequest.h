@@ -23,8 +23,9 @@ typedef enum {
 } CarrotRequestServiceType;
 
 @class CarrotRequestThread;
+@class CarrotRequest;
 
-typedef void (^CarrotRequestResponse)(NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread);
+typedef void (^CarrotRequestResponse)(CarrotRequest* request, NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread);
 
 extern NSString* CarrotRequestTypeGET;
 extern NSString* CarrotRequestTypePOST;

@@ -484,7 +484,7 @@ static NSString* sCarrotDebugUDID = nil;
                             atEndpoint:[NSString stringWithFormat:@"/games/%@/users.json", self.appId]
                            usingMethod:@"POST"
                            withPayload:payload
-                              callback:^(NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread) {
+                              callback:^(CarrotRequest* request, NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread) {
          int httpCode = response != nil ? response.statusCode : 401;
 
          if(httpCode == 404 || httpCode == 403)

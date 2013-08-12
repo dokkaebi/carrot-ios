@@ -422,7 +422,7 @@ NSString* URLEscapedString(NSString* inString)
    }
    else if(request.callback)
    {
-      request.callback(response, data, self);
+      request.callback(request, response, data, self);
    }
 }
 

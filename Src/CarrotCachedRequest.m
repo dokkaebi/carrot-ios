@@ -63,8 +63,9 @@
    [finalPayload setObject:requestId forKey:@"request_id"];
    [finalPayload setObject:[NSNumber numberWithLongLong:(uint64_t)[dateIssued timeIntervalSince1970]] forKey:@"request_date"];
 
-   self = [super initForService:serviceType atEndpoint:endpoint usingMethod:CarrotRequestTypePOST payload:finalPayload callback:^(NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread) {
-      [self requestCallbackStatus:response data:data thread:requestThread];
+   self = [super initForService:serviceType atEndpoint:endpoint usingMethod:CarrotRequestTypePOST payload:finalPayload callback:^(CarrotRequest* request, NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread) {
+      CarrotCachedRequest* cachedRequest = (CarrotCachedRequest*)request;
+      [cachedRequest requestCallbackStatus:response data:data thread:requestThread];
    }];
 
    if(self)
