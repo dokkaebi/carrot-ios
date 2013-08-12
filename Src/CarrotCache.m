@@ -29,7 +29,7 @@
 #define kCacheAlterV0toV1SQL "ALTER TABLE cache ADD COLUMN request_servicetype INTEGER"
 #define kCacheUpdateV0toV1SQL "UPDATE cache SET request_servicetype=%d"
 
-#define kCacheReadSQL "SELECT rowid, request_servicetype, request_endpoint, request_payload, request_id, request_date, retry_count FROM cache WHERE request_servicetype<=%d ORDER BY retry_count"
+#define kCacheReadSQL "SELECT rowid, request_servicetype, request_endpoint, request_payload, request_id, request_date, retry_count FROM cache WHERE request_servicetype<=%d ORDER BY retry_count LIMIT 10"
 #define kCacheInsertSQL "INSERT INTO cache (request_servicetype, request_endpoint, request_payload, request_id, request_date, retry_count) VALUES (%d, %Q, %Q, %Q, %f, %d)"
 #define kCacheUpdateSQL "UPDATE cache SET retry_count=%d WHERE rowid=%lld"
 #define kCacheDeleteSQL "DELETE FROM cache WHERE rowid=%lld"
