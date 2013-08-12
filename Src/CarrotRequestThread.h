@@ -24,7 +24,6 @@
 @property (nonatomic, readonly) BOOL isRunning;
 @property (nonatomic) NSUInteger maxRetryCount; // 0 = infinite
 @property (strong, nonatomic, readonly) CarrotCache* cache;
-@property (weak, nonatomic, readonly) NSArray* requestQueue;
 
 - (id)initWithCarrot:(Carrot*)carrot;
 

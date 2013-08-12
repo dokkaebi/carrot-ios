@@ -27,8 +27,7 @@
 
 @interface CarrotRequestThread ()
 
-@property (strong, nonatomic) NSMutableArray* internalRequestQueue;
-@property (weak, nonatomic, readwrite) NSArray* requestQueue;
+@property (strong, nonatomic) NSMutableArray* requestQueue;
 @property (strong, nonatomic, readwrite) CarrotCache* cache;
 @property (assign, nonatomic) Carrot* carrot;
 @property (nonatomic) BOOL keepThreadRunning;
@@ -53,8 +52,7 @@ NSString* URLEscapedString(NSString* inString)
    self = [super init];
    if(self)
    {
-      self.internalRequestQueue = [[NSMutableArray alloc] init];
-      self.requestQueue = self.internalRequestQueue;
+      self.requestQueue = [[NSMutableArray alloc] init];
       self.carrot = carrot;
       self.maxRetryCount = 0; // Infinite retries by default
       self.requestQueuePause = [[NSCondition alloc] init];
@@ -83,7 +81,8 @@ NSString* URLEscapedString(NSString* inString)
    [self.reachability stopNotifier];
    self.reachability = nil;
 
-   self.internalRequestQueue = nil;
+   [self stop];
+   self.requestQueue = nil;
 }
 
 - (void)performDiscovery
@@ -227,11 +226,11 @@ NSString* URLEscapedString(NSString* inString)
          {
             if(atFront)
             {
-               [self.internalRequestQueue insertObject:request atIndex:0];
+               [self.requestQueue insertObject:request atIndex:0];
             }
             else
             {
-               [self.internalRequestQueue addObject:request];
+               [self.requestQueue addObject:request];
             }
          }
          [self signal];
@@ -246,7 +245,7 @@ NSString* URLEscapedString(NSString* inString)
    {
       NSArray* cachedRequests = [self.cache
                                  cachedRequestsForAuthStatus:self.carrot.authenticationStatus];
-      [self.internalRequestQueue addObjectsFromArray:cachedRequests];
+      [self.requestQueue addObjectsFromArray:cachedRequests];
    }
    return ret;
 }
@@ -362,7 +361,8 @@ NSString* URLEscapedString(NSString* inString)
 
             @synchronized(self.requestQueue)
             {
-               [self.internalRequestQueue removeObjectAtIndex:0];
+               [self.requestQueue removeObjectAtIndex:0];
+               request = nil;
             }
          }
          else
@@ -373,7 +373,7 @@ NSString* URLEscapedString(NSString* inString)
             [self loadQueueFromCache];
 
             // If queue is still empty, wait until it's not empty.
-            while([self.internalRequestQueue count] < 1 && self.keepThreadRunning) {
+            while([self.requestQueue count] < 1 && self.keepThreadRunning) {
                [self.requestQueuePause wait];
             }
             [self.requestQueuePause unlock];
