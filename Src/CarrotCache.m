@@ -221,10 +221,10 @@ static BOOL carrotcache_commit(sqlite3* cache);
             NSString* requestId = [NSString stringWithUTF8String:(const char*)sqlite3_column_text(sqlStatement, 4)];
             NSDate* requestDate = [NSDate dateWithTimeIntervalSince1970:sqlite3_column_double(sqlStatement, 5)];
             NSUInteger retryCount = sqlite3_column_int(sqlStatement, 6);
-            
+
             NSError* error = nil;
             NSDictionary* requestPayload = [NSJSONSerialization JSONObjectWithData:[requestPayloadJSON dataUsingEncoding:NSUTF8StringEncoding] options:0 error:&error];
-            
+
             // Add to array
             if(error)
             {
@@ -240,7 +240,10 @@ static BOOL carrotcache_commit(sqlite3* cache);
                                                dateIssued:requestDate
                                                cacheId:cacheId
                                                retryCount:retryCount];
-               [cacheArray addObject:request];
+               if(request)
+               {
+                  [cacheArray addObject:request];
+               }
             }
          }
       }

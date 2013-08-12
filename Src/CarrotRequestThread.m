@@ -196,7 +196,10 @@ NSString* URLEscapedString(NSString* inString)
                                                     usingMethod:method
                                                     withPayload:payload
                                                        callback:callback];
-      [self addRequestInQueue:request atFront:atFront];
+      if(request)
+      {
+         [self addRequestInQueue:request atFront:atFront];
+      }
    }
    else
    {
@@ -219,7 +222,7 @@ NSString* URLEscapedString(NSString* inString)
 
 - (void)addRequestInQueue:(CarrotRequest*)request atFront:(BOOL)atFront
 {
-   if(request.serviceType <= self.carrot.authenticationStatus)
+   if(request != nil && request.serviceType <= self.carrot.authenticationStatus)
    {
       dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
          @synchronized(self.requestQueue)
