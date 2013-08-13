@@ -343,9 +343,10 @@ NSString* URLEscapedString(NSString* inString)
 - (void)requestQueueProc:(id)context
 {
    _isRunning = YES;
-   @autoreleasepool
+
+   while(self.keepThreadRunning)
    {
-      while(self.keepThreadRunning)
+      @autoreleasepool
       {
          CarrotCachedRequest* request = nil;
 
