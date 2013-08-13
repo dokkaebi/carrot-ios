@@ -241,16 +241,13 @@ NSString* URLEscapedString(NSString* inString)
    }
 }
 
-- (BOOL)loadQueueFromCache
+- (void)loadQueueFromCache
 {
-   BOOL ret = NO;
    @synchronized(self.requestQueue)
    {
-      NSArray* cachedRequests = [self.cache
-                                 cachedRequestsForAuthStatus:self.carrot.authenticationStatus];
-      [self.requestQueue addObjectsFromArray:cachedRequests];
+      [self.cache addRequestsForAuthStatus:self.carrot.authenticationStatus
+                                 intoArray:self.requestQueue];
    }
-   return ret;
 }
 
 - (NSString*)signedPostBody:(CarrotRequest*)request forHost:(NSString*)host

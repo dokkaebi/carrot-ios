@@ -202,10 +202,9 @@ static BOOL carrotcache_commit(sqlite3* cache);
    return ret;
 }
 
-- (NSArray*)cachedRequestsForAuthStatus:(CarrotAuthenticationStatus)authStatus
+- (uint64_t)addRequestsForAuthStatus:(CarrotAuthenticationStatus)authStatus intoArray:(NSMutableArray*)cacheArray
 {
-   NSMutableArray* cacheArray = [[NSMutableArray alloc] init];
-
+   uint64_t numAdded = 0;
    sqlite3_stmt* sqlStatement;
    char* sqlString = sqlite3_mprintf(kCacheReadSQL, authStatus);
    @synchronized(self)
@@ -243,6 +242,7 @@ static BOOL carrotcache_commit(sqlite3* cache);
                if(request)
                {
                   [cacheArray addObject:request];
+                  numAdded++;
                }
             }
          }
@@ -255,7 +255,7 @@ static BOOL carrotcache_commit(sqlite3* cache);
    }
    sqlite3_free(sqlString);
 
-   return cacheArray;
+   return numAdded;
 }
 
 - (BOOL)prepareCache

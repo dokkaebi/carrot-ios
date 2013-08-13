@@ -30,6 +30,6 @@
 - (BOOL)addRetryInCacheForRequest:(CarrotCachedRequest*)request;
 - (BOOL)removeRequestFromCache:(CarrotCachedRequest*)request;
 - (void)markAppInstalled;
-- (NSArray*)cachedRequestsForAuthStatus:(CarrotAuthenticationStatus)authStatus;
+- (uint64_t)addRequestsForAuthStatus:(CarrotAuthenticationStatus)authStatus intoArray:(NSMutableArray*)cacheArray;
 
 @end
