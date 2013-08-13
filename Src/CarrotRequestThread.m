@@ -376,6 +376,10 @@ NSString* URLEscapedString(NSString* inString)
             }
             [self.requestQueuePause unlock];
          }
+
+         // 'jitter' request rate
+         double val = ((double)arc4random() / ARC4RANDOM_MAX) - 0.5;
+         [NSThread sleepForTimeInterval:1.0 + val];
       }
    }
    _isRunning = NO;

@@ -5,3 +5,5 @@
 #ifdef __OBJC__
    #import <Foundation/Foundation.h>
 #endif
+
+#define ARC4RANDOM_MAX      0x100000000
