@@ -600,7 +600,7 @@ static NSString* sCarrotDebugUDID = nil;
 
    if(objectInstanceId != nil)
    {
-      [payload setObject:objectInstanceId forKey:@"object_instance_id"];
+      [fullObjectProperties setObject:objectInstanceId forKey:@"identifier"];
    }
 
    if(actionProperties != nil)
