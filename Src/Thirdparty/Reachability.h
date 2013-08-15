@@ -62,7 +62,7 @@
 #endif
 
 
-extern NSString *const kReachabilityChangedNotification;
+extern NSString *const kCarrotReachabilityChangedNotification;
 
 typedef enum 
 {
