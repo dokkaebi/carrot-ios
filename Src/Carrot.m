@@ -487,10 +487,15 @@ static NSString* sCarrotDebugUDID = nil;
                               callback:^(CarrotRequest* request, NSHTTPURLResponse* response, NSData* data, CarrotRequestThread* requestThread) {
          int httpCode = response != nil ? response.statusCode : 401;
 
-         if(httpCode == 404 || httpCode == 403)
+         if(httpCode == 404)
          {
-            // No such user || User has deauthorized game
-            [self setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized];
+            // No such user
+            [self setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized withError:nil andReason:CarrotAuthenticationStatusReasonUnknown];
+         }
+         else if(httpCode == 403)
+         {
+            // User has deauthorized game
+            [self setAuthenticationStatus:CarrotAuthenticationStatusNotAuthorized withError:nil andReason:CarrotAuthenticationStatusReasonUserRemovedApp];
          }
          else if(![self updateAuthenticationStatus:httpCode])
          {
