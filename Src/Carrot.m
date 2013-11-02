@@ -18,6 +18,8 @@
 #import "CarrotCachedRequest.h"
 #import "OpenUDID.h"
 #import "Reachability.h"
+#import "AmazonSDKUtil.h"
+#include <CommonCrypto/CommonDigest.h>
 
 #define kCarrotSDKVersion @"1.1.0"
 
@@ -567,15 +569,30 @@ static NSString* sCarrotDebugUDID = nil;
 
 - (BOOL)postAction:(NSString*)actionId creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties
 {
-   return [self postAction:actionId withProperties:nil creatingInstanceOf:objectTypeId withProperties:objectProperties andInstanceId:nil];
+   return [self postAction:actionId withProperties:nil creatingInstanceOf:objectTypeId withProperties:objectProperties uploadingImage:nil andInstanceId:nil];
+}
+
+- (BOOL)postAction:(NSString*)actionId creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties uploadingImage:(UIImage *)image
+{
+   return [self postAction:actionId withProperties:nil creatingInstanceOf:objectTypeId withProperties:objectProperties uploadingImage:image andInstanceId:nil];
 }
 
 - (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties
 {
-   return [self postAction:actionId withProperties:nil creatingInstanceOf:objectTypeId withProperties:objectProperties andInstanceId:nil];
+   return [self postAction:actionId withProperties:nil creatingInstanceOf:objectTypeId withProperties:objectProperties uploadingImage:nil andInstanceId:nil];
+}
+
+- (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties uploadingImage:(UIImage *)image
+{
+   return [self postAction:actionId withProperties:nil creatingInstanceOf:objectTypeId withProperties:objectProperties uploadingImage:image andInstanceId:nil];
 }
 
 - (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties andInstanceId:(NSString*)objectInstanceId
+{
+   return [self postAction:actionId withProperties:actionProperties creatingInstanceOf:objectTypeId withProperties:objectProperties uploadingImage:nil andInstanceId:objectInstanceId];
+}
+
+- (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties uploadingImage:(UIImage*)image andInstanceId:(NSString*)objectInstanceId
 {
    if(!objectProperties)
    {
@@ -583,7 +600,7 @@ static NSString* sCarrotDebugUDID = nil;
       return NO;
    }
 
-   NSArray* requiredObjectProperties = @[@"title", @"image", @"description"];
+   NSArray* requiredObjectProperties = (image == nil ? @[@"title", @"image", @"description"] : @[@"title", @"description"]);
    id nilMarker = [NSNull null];
    NSArray* valuesForRequiredProperties = [objectProperties objectsForKeys:requiredObjectProperties notFoundMarker:nilMarker];
    if([valuesForRequiredProperties containsObject:nilMarker])
@@ -596,12 +613,25 @@ static NSString* sCarrotDebugUDID = nil;
    NSMutableDictionary* fullObjectProperties = [NSMutableDictionary dictionaryWithDictionary:objectProperties];
    [fullObjectProperties setObject:objectTypeId forKey:@"object_type"];
 
-   // TODO (v2): Support image uploading
-   [fullObjectProperties setObject:[objectProperties objectForKey:@"image"] forKey:@"image_url"];
-   [fullObjectProperties removeObjectForKey:@"image"];
-
    NSMutableDictionary* payload = [NSMutableDictionary dictionaryWithDictionary:@{
                                    @"action_id" : actionId, @"object_properties" : fullObjectProperties}];
+
+   // Image upload or hosted image
+   if(image == nil)
+   {
+      [fullObjectProperties setObject:[objectProperties objectForKey:@"image"] forKey:@"image_url"];
+      [fullObjectProperties removeObjectForKey:@"image"];
+   }
+   else
+   {
+      unsigned char hash[CC_SHA256_DIGEST_LENGTH];
+      NSData* pngImage = UIImagePNGRepresentation(image);
+      if(!CC_SHA256([pngImage bytes], [pngImage length], hash)) return NO;
+
+      NSString* sha256 = [NSDataWithBase64 base64EncodedStringFromData:[NSData dataWithBytes:hash length:CC_SHA256_DIGEST_LENGTH]];
+      [fullObjectProperties setObject:URLEscapedString(sha256) forKey:@"image_sha"];
+      [payload setObject:[NSDataWithBase64 base64EncodedStringFromData:pngImage] forKey:@"image_bytes"];
+   }
 
    if(objectInstanceId != nil)
    {

@@ -250,7 +250,7 @@ NSString* URLEscapedString(NSString* inString)
    }
 }
 
-- (NSString*)signedPostBody:(CarrotRequest*)request forHost:(NSString*)host
+- (NSMutableDictionary*)signedPostPayload:(CarrotRequest*)request forHost:(NSString*)host
 {
    NSString* path = request.endpoint;
    if(path == nil || path.length < 1) path = @"/";
@@ -276,6 +276,10 @@ NSString* URLEscapedString(NSString* inString)
    for(int i = 0; i < queryKeysSorted.count; i++)
    {
       NSString* key = [queryKeysSorted objectAtIndex:i];
+
+      // Skip signing "image_bytes" if it exists
+      if([key compare:@"image_bytes"] == NSOrderedSame) continue;
+
       id value = [queryParamDict objectForKey:key];
       NSString* valueString = value;
       if([value isKindOfClass:[NSDictionary class]] ||
@@ -307,10 +311,10 @@ NSString* URLEscapedString(NSString* inString)
           [dataToSign bytes], [dataToSign length], &digestBytes);
 
    NSData* digestData = [NSData dataWithBytes:digestBytes length:CC_SHA256_DIGEST_LENGTH];
-   NSString* sigString = URLEscapedString([NSDataWithBase64 base64EncodedStringFromData:digestData]);
+   NSString* sigString = [NSDataWithBase64 base64EncodedStringFromData:digestData];
 
-   // Build URL escaped query string
-   sortedQueryString = [[NSMutableString alloc] init];
+   // Build params dictionary with JSON object representations
+   NSMutableDictionary* retParams = [[NSMutableDictionary alloc] init];
    for(int i = 0; i < queryKeysSorted.count; i++)
    {
       NSString* key = [queryKeysSorted objectAtIndex:i];
@@ -332,12 +336,11 @@ NSString* URLEscapedString(NSString* inString)
             valueString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
          }
       }
-      [sortedQueryString appendFormat:@"%@=%@&", key,
-       ([value isKindOfClass:[NSNumber class]]) ? value : URLEscapedString(valueString)];
+      [retParams setObject:valueString forKey:key];
    }
-   [sortedQueryString appendFormat:@"sig=%@", sigString];
+   [retParams setObject:sigString forKey:@"sig"];
 
-   return sortedQueryString;
+   return retParams;
 }
 
 - (void)requestQueueProc:(id)context
@@ -392,17 +395,42 @@ NSString* URLEscapedString(NSString* inString)
    // If host is nil or empty, the server said "don't send me these now"
    if(!(host && host.length)) return;
 
-   NSString* postBody = [self signedPostBody:request forHost:host];
+   NSMutableDictionary* payload = [self signedPostPayload:request forHost:host];
+   NSString* boundry = @"-===-httpB0unDarY-==-";
+
+   NSMutableData* postData = [[NSMutableData alloc] init];
+
+   for(NSString* key in payload)
+   {
+      // Skip image bytes here.
+      if([key compare:@"image_bytes"] == NSOrderedSame) continue;
+
+      [postData appendData:[[NSString stringWithFormat:@"--%@\r\n", boundry] dataUsingEncoding:NSUTF8StringEncoding]];
+      [postData appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n%@\r\n", key,[payload objectForKey:key]] dataUsingEncoding:NSUTF8StringEncoding]];
+   }
+
+   NSString* imageBytes = [payload objectForKey:@"image_bytes"];
+   if(imageBytes)
+   {
+      // Attach image
+      [payload removeObjectForKey:@"image_bytes"];
+      [postData appendData:[[NSString stringWithFormat:@"--%@\r\n", boundry] dataUsingEncoding:NSUTF8StringEncoding]];
+      [postData appendData:[@"Content-Disposition: form-data; name=\"image_bytes\"; filename=\"file.png\"\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+      [postData appendData:[@"Content-Type: image/png\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+      [postData appendData:[NSDataWithBase64 dataWithBase64EncodedString:imageBytes]];
+      [postData appendData:[@"\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+   }
+   [postData appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundry] dataUsingEncoding:NSUTF8StringEncoding]];
 
    NSMutableURLRequest* preppedRequest = nil;
 
-   NSData* postData = [postBody dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
    preppedRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@://%@%@", kDefaultHostUrlScheme, host, request.endpoint]]];
 
    [preppedRequest setHTTPBody:postData];
    [preppedRequest setValue:[NSString stringWithFormat:@"%d", [postData length]]
          forHTTPHeaderField:@"Content-Length"];
-   [preppedRequest setValue:@"application/x-www-form-urlencoded"
+   NSString *charset = (NSString *)CFStringConvertEncodingToIANACharSetName(CFStringConvertNSStringEncodingToEncoding(NSUTF8StringEncoding));
+   [preppedRequest setValue:[NSString stringWithFormat:@"multipart/form-data; charset=%@; boundary=%@", charset, boundry]
          forHTTPHeaderField:@"Content-Type"];
 
    [preppedRequest setHTTPMethod:@"POST"];

@@ -73,6 +73,9 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
  * 	* postAction:creatingInstanceOf:withProperties:
  * 	* postAction:withProperties:creatingInstanceOf:withProperties:
  * 	* postAction:withProperties:creatingInstanceOf:withProperties:andInstanceId:
+ * 	* postAction:creatingInstanceOf:withProperties:uploadingImage:
+ * 	* postAction:withProperties:creatingInstanceOf:withProperties:uploadingImage:
+ * 	* postAction:withProperties:creatingInstanceOf:withProperties:andInstanceId:uploadingImage:
  *
  * This means that a user may authenticate with Facebook at a much later date
  * and calls made to Carrot will still be transmitted to the server. Each Carrot
@@ -449,6 +452,48 @@ typedef void (^CarrotRequestResponseEx)(NSHTTPURLResponse* response, NSData* dat
  * @returns YES if the request was cached successfully, and will be sent when possible.
  */
 - (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties andInstanceId:(NSString*)objectInstanceId;
+
+/**
+ * Post an Open Graph action to the Carrot service creating a new object.
+ *
+ * @param actionId         The Carrot action id.
+ * @param objectTypeId     The object id of the Carrot object type to create.
+ * @param objectProperties The properties for the new object.
+ * @param image            The UIImage to upload for the new object.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+- (BOOL)postAction:(NSString*)actionId creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties uploadingImage:(UIImage*)image;
+
+/**
+ * Post an Open Graph action to the Carrot service creating a new object.
+ *
+ * @param actionId         The Carrot action id.
+ * @param actionProperties The properties to send with the Carrot action.
+ * @param objectTypeId     The object id of the Carrot object type to create.
+ * @param objectProperties The properties for the new object.
+ * @param image            The UIImage to upload for the new object.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+- (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties uploadingImage:(UIImage*)image;
+
+/**
+ * Post an Open Graph action to the Carrot service creating a new object that specifies an instance id.
+ *
+ * If the instance id specified already exists on the server, it will be re-used
+ * instead of creating a new instance.
+ *
+ * @param actionId         The Carrot action id.
+ * @param actionProperties The properties to send with the Carrot action.
+ * @param objectTypeId     The object id of the Carrot object type to create.
+ * @param objectProperties The properties for the new object.
+ * @param image            The UIImage to upload for the new object.
+ * @param objectInstanceId The object instance id to create or re-use.
+ *
+ * @returns YES if the request was cached successfully, and will be sent when possible.
+ */
+- (BOOL)postAction:(NSString*)actionId withProperties:(NSDictionary*)actionProperties creatingInstanceOf:(NSString*)objectTypeId withProperties:(NSDictionary*)objectProperties uploadingImage:(UIImage*)image andInstanceId:(NSString*)objectInstanceId;
 
 /**
  * Post a 'Like' action that likes the Game's Facebook Page.
